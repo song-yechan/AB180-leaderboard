@@ -1,21 +1,21 @@
 "use client";
 
-import Particles from "@/components/reactbits/Particles";
+import dynamic from "next/dynamic";
+
+const Antigravity = dynamic(
+  () => import("@/components/reactbits/Antigravity"),
+  { ssr: false },
+);
 
 export default function HeroParticles() {
   return (
-    <div className="absolute inset-0 overflow-hidden opacity-60">
-      <Particles
-        particleCount={100}
-        particleSpread={10}
-        speed={0.05}
-        particleColors={["#F59E0B", "#FBBF24", "#FFFFFF"]}
-        alphaParticles
-        particleBaseSize={80}
-        sizeRandomness={0.6}
-        cameraDistance={20}
-        disableRotation={false}
-        moveParticlesOnHover
+    <div className="absolute inset-0 overflow-hidden opacity-60 motion-reduce:hidden">
+      <Antigravity
+        className="h-full w-full"
+        color="#F59E0B"
+        count={200}
+        particleSize={1.5}
+        autoAnimate
       />
     </div>
   );

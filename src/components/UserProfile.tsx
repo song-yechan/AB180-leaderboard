@@ -1,6 +1,7 @@
 "use client";
 
 import CountUp from "./CountUp";
+import { calculateXP, getLevel } from "@/lib/level-system";
 
 interface UserProfileProps {
   user: {
@@ -120,6 +121,51 @@ function TotalTokens({ user }: { user: UserProfileProps["user"] }) {
   );
 }
 
+function LevelCard({ user }: { user: UserProfileProps["user"] }) {
+  const input = user.input_tokens ?? 0;
+  const output = user.output_tokens ?? 0;
+  const cacheRead = user.cache_read_tokens ?? 0;
+  const cacheCreation = user.cache_creation_tokens ?? 0;
+  const totalTokens = input + output + cacheRead + cacheCreation;
+  const xp = calculateXP(totalTokens, user.role);
+  const level = getLevel(xp);
+
+  return (
+    <div className="glass rounded-xl p-4">
+      <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-camp-text-muted">
+        레벨
+      </h3>
+      <div className="flex items-center gap-4">
+        <span className="text-4xl">{level.icon}</span>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <div className="flex items-baseline justify-between">
+            <span className="text-lg font-bold text-camp-text">
+              Lv.{level.level} {level.name}
+            </span>
+            <span className="font-mono text-xs tabular-nums text-camp-text-secondary">
+              {formatTokens(xp)} XP
+            </span>
+          </div>
+          {/* Progress bar */}
+          <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+            <div
+              className="h-full rounded-full bg-camp-accent transition-all duration-700 ease-out"
+              style={{ width: `${Math.round(level.progress * 100)}%` }}
+            />
+          </div>
+          {level.next ? (
+            <span className="text-[10px] text-camp-text-muted">
+              다음: {level.next.icon} {level.next.name} ({formatTokens(level.next.requiredXP)} XP)
+            </span>
+          ) : (
+            <span className="text-[10px] text-camp-accent">MAX LEVEL</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const STAT_CARDS = [
   {
     key: "cost",
@@ -216,6 +262,9 @@ export default function UserProfile({ user }: UserProfileProps) {
           </div>
         ))}
       </div>
+
+      {/* Level card */}
+      <LevelCard user={user} />
 
       {/* Token breakdown */}
       <TotalTokens user={user} />

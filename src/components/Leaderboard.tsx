@@ -6,8 +6,10 @@ import CountUp from "./CountUp";
 import CompareModal from "./CompareModal";
 import SpotlightCard from "@/components/reactbits/SpotlightCard";
 import AnimatedList from "@/components/reactbits/AnimatedList";
+import ElectricBorder from "@/components/reactbits/ElectricBorder";
 import { DUMMY_LEADERBOARD } from "@/lib/dummy-data";
 import { getCategoriesByGroup, getCategoryById } from "@/lib/job-categories";
+import { calculateXP, getLevel } from "@/lib/level-system";
 
 type Category = "all" | "camp" | "non-dev" | "dev";
 type Period = "today" | "week" | "all";
@@ -23,9 +25,21 @@ interface LeaderboardEntry {
   sessions_count: number;
   input_tokens: number;
   output_tokens: number;
+  cache_read_tokens?: number;
+  cache_creation_tokens?: number;
   current_streak?: number;
   commits?: number;
   pull_requests?: number;
+}
+
+function getLevelIcon(entry: LeaderboardEntry): string {
+  const totalTokens =
+    (entry.input_tokens ?? 0) +
+    (entry.output_tokens ?? 0) +
+    (entry.cache_read_tokens ?? 0) +
+    (entry.cache_creation_tokens ?? 0);
+  const xp = calculateXP(totalTokens, entry.role);
+  return getLevel(xp).icon;
 }
 
 const COHORTS: Record<string, number> = {
@@ -100,6 +114,8 @@ function getRankMeta(rank: number) {
       scale: "lg:scale-105",
       order: "order-2 lg:order-2",
       spotlightColor: "rgba(245, 158, 11, 0.15)",
+      electricColor: "#F59E0B",
+      electricSpeed: 1.5,
     };
   if (rank === 2)
     return {
@@ -112,6 +128,8 @@ function getRankMeta(rank: number) {
       scale: "",
       order: "order-1 lg:order-1",
       spotlightColor: "rgba(148, 163, 184, 0.15)",
+      electricColor: "#94A3B8",
+      electricSpeed: 1,
     };
   if (rank === 3)
     return {
@@ -124,6 +142,8 @@ function getRankMeta(rank: number) {
       scale: "",
       order: "order-3 lg:order-3",
       spotlightColor: "rgba(205, 127, 50, 0.15)",
+      electricColor: "#D97706",
+      electricSpeed: 1,
     };
   return null;
 }
@@ -232,6 +252,7 @@ function LeaderboardRow({
                 {getCategoryById(entry.department)?.label ?? entry.department}
               </span>
             )}
+            <span className="shrink-0 text-sm" title="레벨">{getLevelIcon(entry)}</span>
             <span className="truncate text-sm font-semibold text-camp-text">{entry.name}</span>
             <CohortPill cohort={entry.cohort} show={showCohort} />
           </div>
@@ -480,87 +501,96 @@ export default function Leaderboard() {
                 className={`animate-fade-rise ${meta.order}`}
                 style={{ animationDelay: `${index * 60}ms` }}
               >
-                <SpotlightCard
-                  className={`flex cursor-pointer flex-col items-center gap-4 border ${meta.borderColor} ${meta.glowShadow} transition-all duration-300 ${rank === 1 ? "sm:py-8" : ""} ${isSelected ? "ring-2 ring-camp-accent/40" : ""}`}
-                  spotlightColor={meta.spotlightColor}
+                <ElectricBorder
+                  color={meta.electricColor}
+                  speed={meta.electricSpeed}
+                  borderRadius={16}
                 >
-                  <div
-                    className="flex w-full flex-col items-center gap-4"
-                    onClick={() => handleNavigate(entry.user_id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleNavigate(entry.user_id);
-                    }}
+                  <SpotlightCard
+                    className={`flex cursor-pointer flex-col items-center gap-4 border ${meta.borderColor} ${meta.glowShadow} transition-all duration-300 ${rank === 1 ? "sm:py-8" : ""} ${isSelected ? "ring-2 ring-camp-accent/40" : ""}`}
+                    spotlightColor={meta.spotlightColor}
                   >
-                    {/* Medal */}
-                    <span className="text-2xl">{meta.medal}</span>
+                    <div
+                      className="flex w-full flex-col items-center gap-4"
+                      onClick={() => handleNavigate(entry.user_id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleNavigate(entry.user_id);
+                      }}
+                    >
+                      {/* Medal */}
+                      <span className="text-2xl">{meta.medal}</span>
 
-                    {/* Name + Cohort */}
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="truncate text-2xl font-bold text-camp-text">
-                        {entry.name}
-                      </span>
-                      <CohortPill cohort={entry.cohort} show={showCohort} />
+                      {/* Name + Level + Cohort */}
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-lg" title="레벨">{getLevelIcon(entry)}</span>
+                          <span className="truncate text-2xl font-bold text-camp-text">
+                            {entry.name}
+                          </span>
+                        </div>
+                        <CohortPill cohort={entry.cohort} show={showCohort} />
+                      </div>
+
+                      {/* Streak */}
+                      {entry.current_streak !== undefined && entry.current_streak > 0 && (
+                        <span className="text-xs text-camp-text-muted">
+                          {"\uD83D\uDD25"}{" "}
+                          <span className="font-mono tabular-nums">{entry.current_streak}</span>
+                          일 연속
+                        </span>
+                      )}
+
+                      {/* Stats */}
+                      <div className="flex w-full gap-3">
+                        <div className="flex flex-1 flex-col items-center gap-0.5 rounded-lg bg-white/[0.03] px-3 py-2.5">
+                          <span className="text-[10px] font-medium uppercase tracking-wider text-camp-text-secondary">
+                            cost
+                          </span>
+                          <span className="font-mono text-base font-bold tabular-nums text-camp-text">
+                            <CountUp
+                              end={entry.total_cost}
+                              prefix="$"
+                              decimals={2}
+                            />
+                          </span>
+                        </div>
+                        <div className="flex flex-1 flex-col items-center gap-0.5 rounded-lg bg-white/[0.03] px-3 py-2.5">
+                          <span className="text-[10px] font-medium uppercase tracking-wider text-camp-text-secondary">
+                            {showDevMetrics ? "commits / PR" : "sessions"}
+                          </span>
+                          <span className="font-mono text-base font-bold tabular-nums text-camp-text">
+                            {showDevMetrics ? (
+                              <>
+                                <CountUp end={entry.commits ?? 0} />
+                                {" / "}
+                                <CountUp end={entry.pull_requests ?? 0} />
+                              </>
+                            ) : (
+                              <CountUp end={entry.sessions_count} />
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Streak */}
-                    {entry.current_streak !== undefined && entry.current_streak > 0 && (
-                      <span className="text-xs text-camp-text-muted">
-                        {"\uD83D\uDD25"}{" "}
-                        <span className="font-mono tabular-nums">{entry.current_streak}</span>
-                        일 연속
-                      </span>
-                    )}
-
-                    {/* Stats */}
-                    <div className="flex w-full gap-3">
-                      <div className="flex flex-1 flex-col items-center gap-0.5 rounded-lg bg-white/[0.03] px-3 py-2.5">
-                        <span className="text-[10px] font-medium uppercase tracking-wider text-camp-text-secondary">
-                          cost
-                        </span>
-                        <span className="font-mono text-base font-bold tabular-nums text-camp-text">
-                          <CountUp
-                            end={entry.total_cost}
-                            prefix="$"
-                            decimals={2}
-                          />
-                        </span>
-                      </div>
-                      <div className="flex flex-1 flex-col items-center gap-0.5 rounded-lg bg-white/[0.03] px-3 py-2.5">
-                        <span className="text-[10px] font-medium uppercase tracking-wider text-camp-text-secondary">
-                          {showDevMetrics ? "commits / PR" : "sessions"}
-                        </span>
-                        <span className="font-mono text-base font-bold tabular-nums text-camp-text">
-                          {showDevMetrics ? (
-                            <>
-                              <CountUp end={entry.commits ?? 0} />
-                              {" / "}
-                              <CountUp end={entry.pull_requests ?? 0} />
-                            </>
-                          ) : (
-                            <CountUp end={entry.sessions_count} />
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Compare checkbox */}
-                  <label
-                    className="flex items-center gap-1.5 text-[10px] text-camp-text-muted"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleToggleCompare(entry.user_id)}
-                      className="h-3 w-3 cursor-pointer appearance-none rounded border border-white/20 bg-white/[0.03] transition-all checked:border-camp-accent checked:bg-camp-accent"
-                      style={isSelected ? { backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='black' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E\")" } : {}}
-                    />
-                    비교
-                  </label>
-                </SpotlightCard>
+                    {/* Compare checkbox */}
+                    <label
+                      className="flex items-center gap-1.5 text-[10px] text-camp-text-muted"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleCompare(entry.user_id)}
+                        className="h-3 w-3 cursor-pointer appearance-none rounded border border-white/20 bg-white/[0.03] transition-all checked:border-camp-accent checked:bg-camp-accent"
+                        style={isSelected ? { backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='black' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E\")" } : {}}
+                      />
+                      비교
+                    </label>
+                  </SpotlightCard>
+                </ElectricBorder>
               </div>
             );
           })}
