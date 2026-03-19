@@ -183,6 +183,7 @@ function LeaderboardRow({
   onToggleCompare,
   onNavigate,
   showCohort,
+  showDevMetrics,
 }: {
   entry: LeaderboardEntry;
   rank: number;
@@ -190,8 +191,8 @@ function LeaderboardRow({
   onToggleCompare: (userId: string) => void;
   onNavigate: (userId: string) => void;
   showCohort: boolean;
+  showDevMetrics: boolean;
 }) {
-  const isDev = entry.role === "developer";
 
   return (
     <div
@@ -249,9 +250,17 @@ function LeaderboardRow({
         <CountUp end={entry.total_cost} prefix="$" decimals={2} />
       </span>
 
-      {/* Sessions */}
+      {/* Sessions or Commits/PR based on tab */}
       <span className="hidden w-24 text-right font-mono text-sm tabular-nums text-camp-text-secondary sm:block">
-        <CountUp end={entry.sessions_count} />
+        {showDevMetrics ? (
+          <span title="commits / PRs">
+            <CountUp end={entry.commits ?? 0} />
+            {" / "}
+            <CountUp end={entry.pull_requests ?? 0} />
+          </span>
+        ) : (
+          <CountUp end={entry.sessions_count} />
+        )}
       </span>
     </div>
   );
@@ -353,6 +362,9 @@ export default function Leaderboard() {
     (id) => data.find((e) => e.user_id === id)?.name ?? id
   );
 
+  // 개발자 탭에서만 커밋/PR 표시, 나머지는 세션
+  const showDevMetrics = category === "dev";
+
   const listItems: ReactNode[] = rest.map((entry, index) => (
     <LeaderboardRow
       key={entry.user_id}
@@ -362,6 +374,7 @@ export default function Leaderboard() {
       onToggleCompare={handleToggleCompare}
       onNavigate={handleNavigate}
       showCohort={showCohort}
+      showDevMetrics={showDevMetrics}
     />
   ));
 
@@ -516,10 +529,18 @@ export default function Leaderboard() {
                       </div>
                       <div className="flex flex-1 flex-col items-center gap-0.5 rounded-lg bg-white/[0.03] px-3 py-2.5">
                         <span className="text-[10px] font-medium uppercase tracking-wider text-camp-text-secondary">
-                          sessions
+                          {showDevMetrics ? "commits / PR" : "sessions"}
                         </span>
                         <span className="font-mono text-base font-bold tabular-nums text-camp-text">
-                          <CountUp end={entry.sessions_count} />
+                          {showDevMetrics ? (
+                            <>
+                              <CountUp end={entry.commits ?? 0} />
+                              {" / "}
+                              <CountUp end={entry.pull_requests ?? 0} />
+                            </>
+                          ) : (
+                            <CountUp end={entry.sessions_count} />
+                          )}
                         </span>
                       </div>
                     </div>
@@ -555,7 +576,7 @@ export default function Leaderboard() {
             <span className="w-8">#</span>
             <span className="flex-1">이름</span>
             <span className="w-24 text-right">비용</span>
-            <span className="hidden w-24 text-right sm:block">세션</span>
+            <span className="hidden w-24 text-right sm:block">{showDevMetrics ? "커밋 / PR" : "세션"}</span>
           </div>
 
           <AnimatedList

@@ -4,7 +4,7 @@ import Particles from "@/components/reactbits/Particles";
 
 export default function HeroParticles() {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-60">
+    <div className="absolute inset-0 overflow-hidden opacity-60">
       <Particles
         particleCount={100}
         particleSpread={10}
@@ -15,7 +15,7 @@ export default function HeroParticles() {
         sizeRandomness={0.6}
         cameraDistance={20}
         disableRotation={false}
-        moveParticlesOnHover={false}
+        moveParticlesOnHover
       />
     </div>
   );
