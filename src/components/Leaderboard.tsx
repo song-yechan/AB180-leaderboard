@@ -7,30 +7,13 @@ import CompareModal from "./CompareModal";
 import SpotlightCard from "@/components/reactbits/SpotlightCard";
 import AnimatedList from "@/components/reactbits/AnimatedList";
 import ElectricBorder from "@/components/reactbits/ElectricBorder";
-import { DUMMY_LEADERBOARD } from "@/lib/dummy-data";
+import { DUMMY_LEADERBOARD, type LeaderboardEntry } from "@/lib/dummy-data";
+import { COHORTS } from "@/lib/constants";
 import { getCategoriesByGroup, getCategoryById } from "@/lib/job-categories";
 import { calculateXP, getLevel } from "@/lib/level-system";
 
 type Category = "all" | "camp" | "non-dev" | "dev";
 type Period = "today" | "week" | "all";
-
-interface LeaderboardEntry {
-  user_id: string;
-  name: string;
-  avatar_url: string | null;
-  role: string;
-  department?: string;
-  cohort?: number | null;
-  total_cost: number;
-  sessions_count: number;
-  input_tokens: number;
-  output_tokens: number;
-  cache_read_tokens?: number;
-  cache_creation_tokens?: number;
-  current_streak?: number;
-  commits?: number;
-  pull_requests?: number;
-}
 
 function getLevelIcon(entry: LeaderboardEntry): string {
   const totalTokens =
@@ -41,10 +24,6 @@ function getLevelIcon(entry: LeaderboardEntry): string {
   const xp = calculateXP(totalTokens, entry.role);
   return getLevel(xp).icon;
 }
-
-const COHORTS: Record<string, number> = {
-  "1": 1, "2": 1, "3": 1, "4": 2, "5": 2, "6": 1, "7": 2, "8": 2,
-};
 
 const CATEGORY_TABS: { key: Category; label: string }[] = [
   { key: "all", label: "\uC804\uCCB4" },
@@ -316,7 +295,7 @@ export default function Leaderboard() {
         `/api/usage?period=${periodParam}&category=${apiCategory}`
       );
       if (!res.ok) {
-        setRawData(enrichWithCohortAndStreak(DUMMY_LEADERBOARD as unknown as LeaderboardEntry[]));
+        setRawData(enrichWithCohortAndStreak(DUMMY_LEADERBOARD));
         return;
       }
       const json = await res.json();
@@ -324,12 +303,12 @@ export default function Leaderboard() {
         ? json.leaderboard
         : [];
       if (leaderboard.length === 0) {
-        setRawData(enrichWithCohortAndStreak(DUMMY_LEADERBOARD as unknown as LeaderboardEntry[]));
+        setRawData(enrichWithCohortAndStreak(DUMMY_LEADERBOARD));
       } else {
         setRawData(enrichWithCohortAndStreak(leaderboard));
       }
     } catch {
-      setRawData(enrichWithCohortAndStreak(DUMMY_LEADERBOARD as unknown as LeaderboardEntry[]));
+      setRawData(enrichWithCohortAndStreak(DUMMY_LEADERBOARD));
     } finally {
       setLoading(false);
       setAnimationKey((prev) => prev + 1);
@@ -402,9 +381,9 @@ export default function Leaderboard() {
   return (
     <div className="flex flex-col gap-8">
       {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Category tabs with underline */}
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
+        {/* Top row: category tabs + period pills */}
+        <div className="flex items-start justify-between gap-4">
           <div className="flex gap-0.5 overflow-x-auto">
             {CATEGORY_TABS.map((tab) => (
               <button
@@ -422,44 +401,43 @@ export default function Leaderboard() {
             ))}
           </div>
 
-          {/* Department sub-filter */}
-          {showDeptFilter && (
-            <div className="flex gap-1 overflow-x-auto pl-1">
-              {deptOptions.map((dept) => (
-                <button
-                  key={dept}
-                  type="button"
-                  onClick={() => setDepartment(dept)}
-                  className={`cursor-pointer whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium transition-all ${
-                    department === dept
-                      ? "bg-camp-accent/15 text-camp-accent"
-                      : "text-camp-text-muted hover:text-camp-text-secondary"
-                  }`}
-                >
-                  {dept === "\uC804\uCCB4" ? "\uC804\uCCB4" : (getCategoryById(dept)?.label ?? dept)}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex shrink-0 gap-1 rounded-lg bg-white/[0.03] p-1">
+            {PERIOD_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setPeriod(tab.key)}
+                className={`cursor-pointer rounded-md px-3.5 py-1.5 text-xs font-medium transition-all ${
+                  period === tab.key
+                    ? "bg-white/10 text-camp-text shadow-sm"
+                    : "text-camp-text-secondary hover:text-camp-text"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Period pills */}
-        <div className="flex gap-1 self-start rounded-lg bg-white/[0.03] p-1 sm:self-auto">
-          {PERIOD_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setPeriod(tab.key)}
-              className={`cursor-pointer rounded-md px-3.5 py-1.5 text-xs font-medium transition-all ${
-                period === tab.key
-                  ? "bg-white/10 text-camp-text shadow-sm"
-                  : "text-camp-text-secondary hover:text-camp-text"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Department sub-filter (separate row) */}
+        {showDeptFilter && (
+          <div className="flex gap-1 overflow-x-auto">
+            {deptOptions.map((dept) => (
+              <button
+                key={dept}
+                type="button"
+                onClick={() => setDepartment(dept)}
+                className={`cursor-pointer whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium transition-all ${
+                  department === dept
+                    ? "bg-camp-accent/15 text-camp-accent"
+                    : "text-camp-text-muted hover:text-camp-text-secondary"
+                }`}
+              >
+                {dept === "\uC804\uCCB4" ? "\uC804\uCCB4" : (getCategoryById(dept)?.label ?? dept)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Loading state */}

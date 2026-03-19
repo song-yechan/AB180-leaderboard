@@ -20,8 +20,16 @@ interface SlackUserInfo {
   error?: string;
 }
 
+function requireEnv(key: string): string {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
+}
+
 export async function GET(request: NextRequest) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+  const appUrl = requireEnv("NEXT_PUBLIC_APP_URL");
   const code = request.nextUrl.searchParams.get("code");
   const error = request.nextUrl.searchParams.get("error");
 
@@ -38,8 +46,8 @@ export async function GET(request: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        client_id: process.env.SLACK_CLIENT_ID!,
-        client_secret: process.env.SLACK_CLIENT_SECRET!,
+        client_id: requireEnv("SLACK_CLIENT_ID"),
+        client_secret: requireEnv("SLACK_CLIENT_SECRET"),
         code,
         redirect_uri: `${appUrl}/api/auth/slack/callback`,
       }),

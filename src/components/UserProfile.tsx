@@ -12,7 +12,7 @@ interface UserProfileProps {
     cohort?: number | null;
     total_cost: number;
     sessions_count: number;
-    commits: number;
+    commits?: number;
     current_streak: number;
     longest_streak: number;
     input_tokens?: number;
@@ -187,7 +187,7 @@ const STAT_CARDS = [
     key: "commits",
     icon: "\u2328\uFE0F",
     label: "커밋",
-    getValue: (u: UserProfileProps["user"]) => u.commits,
+    getValue: (u: UserProfileProps["user"]) => u.commits ?? 0,
     prefix: "",
     decimals: 0,
   },

@@ -22,19 +22,21 @@ export interface LeaderboardEntry {
   name: string;
   avatar_url: string | null;
   role: string;
-  department: string;
+  department?: string;
   total_cost: number;
   sessions_count: number;
   input_tokens: number;
   output_tokens: number;
-  lines_added: number;
-  lines_removed: number;
-  commits: number;
-  pull_requests: number;
-  current_streak: number;
-  max_streak: number;
-  cohort: number | null;
-  badges: Badge[];
+  cache_read_tokens?: number;
+  cache_creation_tokens?: number;
+  lines_added?: number;
+  lines_removed?: number;
+  commits?: number;
+  pull_requests?: number;
+  current_streak?: number;
+  max_streak?: number;
+  cohort?: number | null;
+  badges?: Badge[];
 }
 
 export interface DailyUsage {
