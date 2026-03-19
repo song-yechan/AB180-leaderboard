@@ -15,7 +15,7 @@ export default function Home() {
 
             <HeroTitle />
 
-            <p className="max-w-md text-base leading-relaxed text-zinc-300">
+            <p className="max-w-md text-base leading-relaxed text-zinc-100">
               AI Camp 참여자들의 실시간 사용량을 확인하세요.
               <br className="hidden sm:block" />
               매일 AI를 더 가까이, 더 자연스럽게.

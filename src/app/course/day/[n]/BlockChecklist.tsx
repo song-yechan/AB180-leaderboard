@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Block } from "@/lib/course-data";
+import { COURSE_CONTENT } from "@/lib/course-content";
+import BlockContent from "@/components/BlockContent";
 
 interface BlockChecklistProps {
   dayNumber: number;
@@ -117,10 +119,18 @@ export default function BlockChecklist({
               )}
             </button>
 
-            {/* Summary content */}
-            {block.summary && isOpen && (
-              <div className="ml-12 mr-4 mt-1 mb-1 rounded-lg border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-xs leading-relaxed text-camp-text-secondary">
-                {block.summary}
+            {/* Full content or summary fallback */}
+            {isOpen && (
+              <div className="ml-12 mr-4 mt-1 mb-1 rounded-lg border border-white/[0.04] bg-white/[0.02] px-5 py-4">
+                {COURSE_CONTENT[dayNumber]?.[block.id] ? (
+                  <BlockContent
+                    content={COURSE_CONTENT[dayNumber][block.id]}
+                  />
+                ) : (
+                  <p className="text-xs leading-relaxed text-camp-text-secondary">
+                    {block.summary}
+                  </p>
+                )}
               </div>
             )}
           </div>
