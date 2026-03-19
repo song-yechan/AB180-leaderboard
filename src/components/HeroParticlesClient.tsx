@@ -1,26 +1,22 @@
 "use client";
 
-import PixelBlast from "@/components/reactbits/PixelBlast";
+import Waves from "@/components/reactbits/Waves";
 
 export default function HeroParticlesClient() {
   return (
-    <div className="absolute inset-0 z-0 min-h-[300px] min-w-[300px] overflow-hidden motion-reduce:hidden">
-      <PixelBlast
-        className="h-full w-full"
-        color="#D97706"
-        variant="square"
-        pixelSize={3}
-        patternScale={2}
-        patternDensity={0.8}
-        enableRipples
-        rippleSpeed={0.3}
-        rippleThickness={0.1}
-        rippleIntensityScale={1}
-        liquid
-        liquidStrength={0.1}
-        liquidRadius={1}
-        edgeFade={0.4}
-        speed={0.5}
+    <div className="absolute inset-0 z-0 overflow-hidden motion-reduce:hidden">
+      <Waves
+        lineColor="rgba(245, 158, 11, 0.25)"
+        backgroundColor="transparent"
+        waveSpeedX={0.015}
+        waveSpeedY={0.008}
+        waveAmpX={40}
+        waveAmpY={20}
+        xGap={12}
+        yGap={36}
+        friction={0.92}
+        tension={0.008}
+        maxCursorMove={120}
       />
     </div>
   );
