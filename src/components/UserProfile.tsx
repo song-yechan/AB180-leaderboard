@@ -155,7 +155,7 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
           </div>
           {level.next ? (
             <span className="text-[10px] text-camp-text-muted">
-              다음: {level.next.icon} {level.next.name} ({formatTokens(level.next.requiredXP)} XP)
+              다음: ??? — {formatTokens(level.next.requiredXP - xp)} 토큰 더 필요
             </span>
           ) : (
             <span className="text-[10px] text-camp-accent">MAX LEVEL</span>
