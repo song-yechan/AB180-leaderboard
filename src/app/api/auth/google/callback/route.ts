@@ -1,7 +1,12 @@
+import crypto from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServiceSupabase } from "@/lib/supabase/server";
+
+function generateApiToken(): string {
+  return `aicamp_${crypto.randomBytes(32).toString("hex")}`;
+}
 
 interface GoogleTokenResponse {
   access_token: string;
@@ -86,30 +91,42 @@ export async function GET(request: NextRequest) {
 
   const { data: existingUser } = await supabase
     .from("users")
-    .select("id, role")
+    .select("id, role, api_token")
     .eq("google_id", userInfo.id)
     .single();
 
   const isNewUser = !existingUser;
 
   // Upsert user in Supabase
+  const upsertPayload: Record<string, string> = {
+    google_id: userInfo.id,
+    email: userInfo.email,
+    name: userInfo.name,
+    avatar_url: userInfo.picture,
+    updated_at: new Date().toISOString(),
+  };
+
+  // New users get an api_token on first signup
+  if (isNewUser) {
+    upsertPayload.api_token = generateApiToken();
+  }
+
   const { data: user, error: dbError } = await supabase
     .from("users")
-    .upsert(
-      {
-        google_id: userInfo.id,
-        email: userInfo.email,
-        name: userInfo.name,
-        avatar_url: userInfo.picture,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "google_id" },
-    )
+    .upsert(upsertPayload, { onConflict: "google_id" })
     .select("id")
     .single();
 
   if (dbError || !user) {
     return NextResponse.redirect(`${appUrl}/auth?error=db_error`);
+  }
+
+  // Existing users missing api_token get one generated
+  if (!isNewUser && existingUser?.api_token == null) {
+    await supabase
+      .from("users")
+      .update({ api_token: generateApiToken() })
+      .eq("id", user.id);
   }
 
   // Set session cookie
