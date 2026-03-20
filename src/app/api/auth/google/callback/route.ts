@@ -3,21 +3,21 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
-interface SlackTokenResponse {
-  ok: boolean;
+interface GoogleTokenResponse {
   access_token: string;
   id_token: string;
+  token_type: string;
+  expires_in: number;
   error?: string;
+  error_description?: string;
 }
 
-interface SlackUserInfo {
-  ok: boolean;
-  sub: string;
+interface GoogleUserInfo {
+  id: string;
+  email: string;
+  verified_email: boolean;
   name: string;
   picture: string;
-  email: string;
-  "https://slack.com/team_id": string;
-  error?: string;
 }
 
 function requireEnv(key: string): string {
@@ -35,64 +35,59 @@ export async function GET(request: NextRequest) {
 
   if (error || !code) {
     return NextResponse.redirect(
-      `${appUrl}/auth?error=${error || "no_code"}`
+      `${appUrl}/auth?error=${error || "no_code"}`,
     );
   }
 
   // Exchange code for access token
-  const tokenResponse = await fetch(
-    "https://slack.com/api/openid.connect.token",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: requireEnv("SLACK_CLIENT_ID"),
-        client_secret: requireEnv("SLACK_CLIENT_SECRET"),
-        code,
-        redirect_uri: `${appUrl}/api/auth/slack/callback`,
-      }),
-    }
-  );
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: requireEnv("GOOGLE_CLIENT_ID"),
+      client_secret: requireEnv("GOOGLE_CLIENT_SECRET"),
+      code,
+      redirect_uri: `${appUrl}/api/auth/google/callback`,
+      grant_type: "authorization_code",
+    }),
+  });
 
-  const tokenData: SlackTokenResponse = await tokenResponse.json();
+  const tokenData: GoogleTokenResponse = await tokenResponse.json();
 
-  if (!tokenData.ok || !tokenData.access_token) {
+  if (tokenData.error || !tokenData.access_token) {
     return NextResponse.redirect(
-      `${appUrl}/auth?error=token_exchange_failed`
+      `${appUrl}/auth?error=token_exchange_failed`,
     );
   }
 
   // Fetch user info
   const userInfoResponse = await fetch(
-    "https://slack.com/api/openid.connect.userInfo",
+    "https://www.googleapis.com/oauth2/v2/userinfo",
     {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
-    }
+    },
   );
 
-  const userInfo: SlackUserInfo = await userInfoResponse.json();
+  const userInfo: GoogleUserInfo = await userInfoResponse.json();
 
-  if (!userInfo.ok) {
+  if (!userInfo.email) {
+    return NextResponse.redirect(`${appUrl}/auth?error=userinfo_failed`);
+  }
+
+  // Verify email domain
+  if (!userInfo.email.endsWith("@ab180.co")) {
     return NextResponse.redirect(
-      `${appUrl}/auth?error=userinfo_failed`
+      `${appUrl}/auth?error=unauthorized_domain`,
     );
   }
 
-  // Verify team_id
-  const teamId = userInfo["https://slack.com/team_id"];
-  if (teamId !== process.env.SLACK_TEAM_ID) {
-    return NextResponse.redirect(
-      `${appUrl}/auth?error=unauthorized_team`
-    );
-  }
-
-  // 기존 사용자 확인
+  // Check existing user
   const supabase = await createServiceSupabase();
 
   const { data: existingUser } = await supabase
     .from("users")
     .select("id, role")
-    .eq("slack_id", userInfo.sub)
+    .eq("google_id", userInfo.id)
     .single();
 
   const isNewUser = !existingUser;
@@ -102,21 +97,19 @@ export async function GET(request: NextRequest) {
     .from("users")
     .upsert(
       {
-        slack_id: userInfo.sub,
-        slack_team_id: teamId,
+        google_id: userInfo.id,
+        email: userInfo.email,
         name: userInfo.name,
         avatar_url: userInfo.picture,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "slack_id" }
+      { onConflict: "google_id" },
     )
     .select("id")
     .single();
 
   if (dbError || !user) {
-    return NextResponse.redirect(
-      `${appUrl}/auth?error=db_error`
-    );
+    return NextResponse.redirect(`${appUrl}/auth?error=db_error`);
   }
 
   // Set session cookie
@@ -129,7 +122,7 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 30, // 30 days
   });
 
-  // 신규 사용자 → 온보딩, 기존 사용자 → 홈
+  // New user -> onboarding, existing user -> home
   if (isNewUser) {
     return NextResponse.redirect(`${appUrl}/onboarding`);
   }

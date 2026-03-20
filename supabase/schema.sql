@@ -1,11 +1,10 @@
 -- AB180 AI Camp Web Schema
 
--- 사용자 (Slack OAuth)
+-- 사용자 (Google OAuth)
 create table users (
   id uuid primary key default gen_random_uuid(),
-  slack_id text unique not null,
-  slack_team_id text not null,
-  email text,
+  google_id text unique not null,
+  email text unique not null,
   name text not null,
   avatar_url text,
   role text check (role in ('developer', 'non-developer')) default 'non-developer',
