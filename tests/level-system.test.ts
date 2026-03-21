@@ -29,7 +29,7 @@ describe("LEVELS", () => {
 
   it("has icon paths for all levels", () => {
     for (const level of LEVELS) {
-      expect(level.icon).toMatch(/^\/levels\/lv\d{2}\.png$/);
+      expect(level.icon).toMatch(/^\/levels\/Lv\.\d{2}\.png$/);
     }
   });
 });
@@ -80,14 +80,14 @@ describe("getLevel", () => {
     const result = getLevel(100_000);
     expect(result.level).toBe(2);
     expect(result.next?.level).toBe(3);
-    expect(result.next?.name).toBe("꼬부기");
+    expect(result.next?.name).toBe("푸린");
   });
 
   it("handles XP between levels correctly", () => {
     // Just below Lv.5 threshold (2M)
     const result = getLevel(1_999_999);
     expect(result.level).toBe(4);
-    expect(result.name).toBe("파이리");
+    expect(result.name).toBe("메타몽");
   });
 
   it("handles very large XP beyond max", () => {
