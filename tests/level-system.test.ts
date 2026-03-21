@@ -62,7 +62,7 @@ describe("getLevel", () => {
   });
 
   it("returns level 20 for max XP", () => {
-    const result = getLevel(10_000_000_000);
+    const result = getLevel(20_000_000_000);
     expect(result.level).toBe(20);
     expect(result.name).toBe("뮤");
     expect(result.progress).toBe(1);
@@ -70,22 +70,22 @@ describe("getLevel", () => {
   });
 
   it("calculates progress correctly between levels", () => {
-    // Lv.2 starts at 500K, Lv.3 at 1.5M, midpoint = 1M
-    const result = getLevel(1_000_000);
+    // Lv.2 starts at 1M, Lv.3 at 3M, midpoint = 2M
+    const result = getLevel(2_000_000);
     expect(result.level).toBe(2);
     expect(result.progress).toBeCloseTo(0.5, 1);
   });
 
   it("returns correct next level", () => {
-    const result = getLevel(500_000);
+    const result = getLevel(1_000_000);
     expect(result.level).toBe(2);
     expect(result.next?.level).toBe(3);
     expect(result.next?.name).toBe("푸린");
   });
 
   it("handles XP between levels correctly", () => {
-    // Just below Lv.5 threshold (6M)
-    const result = getLevel(5_999_999);
+    // Just below Lv.5 threshold (12M)
+    const result = getLevel(11_999_999);
     expect(result.level).toBe(4);
     expect(result.name).toBe("메타몽");
   });

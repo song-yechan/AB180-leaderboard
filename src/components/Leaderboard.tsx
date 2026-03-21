@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useState, useCallback, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import CountUp from "./CountUp";
 import CompareModal from "./CompareModal";
@@ -12,6 +12,7 @@ import type { LeaderboardEntry } from "@/lib/types";
 import { formatNumber } from "@/lib/format";
 import { getCategoriesByGroup, getCategoryById } from "@/lib/job-categories";
 import { calculateTotalTokens, calculateXP, getLevel } from "@/lib/level-system";
+import LevelUpModal from "./LevelUpModal";
 
 type Category = "all" | "camp" | "non-dev" | "dev";
 type Period = "today" | "week" | "all";
@@ -224,6 +225,12 @@ export default function Leaderboard() {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
+  const [levelUpInfo, setLevelUpInfo] = useState<{
+    level: number;
+    name: string;
+    icon: string;
+  } | null>(null);
+  const levelUpChecked = useRef(false);
 
   // Map category to API-compatible values; camp tab is filtered client-side
   const apiCategory = category === "camp" ? "all" : category;
@@ -262,6 +269,39 @@ export default function Leaderboard() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Level-up detection: compare current level with localStorage
+  useEffect(() => {
+    if (loading || rawData.length === 0 || levelUpChecked.current) return;
+    levelUpChecked.current = true;
+
+    fetch("/api/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((me) => {
+        if (!me?.id) return;
+        const entry = rawData.find((e) => e.user_id === me.id);
+        if (!entry) return;
+
+        const info = getLevelInfo(entry);
+        const STORAGE_KEY = "ai-camp-last-level";
+        const lastLevel = parseInt(
+          localStorage.getItem(STORAGE_KEY) ?? "0",
+          10,
+        );
+
+        if (info.level > lastLevel) {
+          setLevelUpInfo({
+            level: info.level,
+            name: info.name,
+            icon: info.icon,
+          });
+        }
+        localStorage.setItem(STORAGE_KEY, String(info.level));
+      })
+      .catch(() => {
+        /* not logged in — ignore */
+      });
+  }, [loading, rawData]);
 
   // Reset department filter when category changes
   useEffect(() => {
@@ -666,6 +706,16 @@ export default function Leaderboard() {
           idA={compareIds[0]}
           idB={compareIds[1]}
           onClose={() => setShowCompareModal(false)}
+        />
+      )}
+
+      {/* Level-up modal */}
+      {levelUpInfo && (
+        <LevelUpModal
+          level={levelUpInfo.level}
+          name={levelUpInfo.name}
+          icon={levelUpInfo.icon}
+          onClose={() => setLevelUpInfo(null)}
         />
       )}
     </div>
