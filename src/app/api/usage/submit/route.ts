@@ -29,6 +29,8 @@ export async function POST(request: NextRequest) {
   const cacheCreationTokens = Number(body.cache_creation_tokens ?? 0);
   const cacheReadTokens = Number(body.cache_read_tokens ?? 0);
   const totalCost = Number(body.total_cost ?? 0);
+  const commits = Number(body.commits ?? 0);
+  const pullRequests = Number(body.pull_requests ?? 0);
   const date = body.date as string | undefined;
 
   if (!date) {
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest) {
     // 4. Check for existing usage_log row for this user + date
     const { data: existing, error: fetchError } = await supabase
       .from("usage_logs")
-      .select("id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, total_cost, sessions_count")
+      .select("id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, total_cost, sessions_count, commits, pull_requests")
       .eq("user_id", userId)
       .eq("date", date)
       .maybeSingle();
@@ -82,6 +84,8 @@ export async function POST(request: NextRequest) {
           cache_creation_tokens: (existing.cache_creation_tokens ?? 0) + cacheCreationTokens,
           cache_read_tokens: (existing.cache_read_tokens ?? 0) + cacheReadTokens,
           total_cost: Number(existing.total_cost ?? 0) + totalCost,
+          commits: (existing.commits ?? 0) + commits,
+          pull_requests: (existing.pull_requests ?? 0) + pullRequests,
           sessions_count: (existing.sessions_count ?? 0) + 1,
           synced_at: new Date().toISOString(),
         })
@@ -105,6 +109,8 @@ export async function POST(request: NextRequest) {
           cache_creation_tokens: cacheCreationTokens,
           cache_read_tokens: cacheReadTokens,
           total_cost: totalCost,
+          commits,
+          pull_requests: pullRequests,
           sessions_count: 1,
         });
 

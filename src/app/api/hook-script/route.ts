@@ -187,27 +187,58 @@ process.stdin.on("end", () => {
     let totalCacheCreate = 0;
     let totalCacheRead = 0;
     let totalCost = 0;
+    let commits = 0;
+    let pullRequests = 0;
     const modelsSet = new Set();
 
     for (const line of lines) {
       try {
         const entry = JSON.parse(line);
-        if (entry.type !== "assistant") continue;
-        const usage = entry.message && entry.message.usage;
-        const model = entry.message && entry.message.model;
-        if (usage) {
-          const inp = usage.input_tokens || 0;
-          const out = usage.output_tokens || 0;
-          const cw = usage.cache_creation_input_tokens || 0;
-          const cr = usage.cache_read_input_tokens || 0;
-          totalInput += inp;
-          totalOutput += out;
-          totalCacheCreate += cw;
-          totalCacheRead += cr;
-          const p = getPrice(model);
-          totalCost += (inp * p.input + out * p.output + cw * p.cache_write + cr * p.cache_read) / 1000000;
+
+        // 토큰 사용량 집계 (assistant 메시지)
+        if (entry.type === "assistant") {
+          const usage = entry.message && entry.message.usage;
+          const model = entry.message && entry.message.model;
+          if (usage) {
+            const inp = usage.input_tokens || 0;
+            const out = usage.output_tokens || 0;
+            const cw = usage.cache_creation_input_tokens || 0;
+            const cr = usage.cache_read_input_tokens || 0;
+            totalInput += inp;
+            totalOutput += out;
+            totalCacheCreate += cw;
+            totalCacheRead += cr;
+            const p = getPrice(model);
+            totalCost += (inp * p.input + out * p.output + cw * p.cache_write + cr * p.cache_read) / 1000000;
+          }
+          if (model) modelsSet.add(model);
+
+          // Bash 도구 호출에서 git commit / gh pr 감지
+          const content = entry.message && entry.message.content;
+          if (Array.isArray(content)) {
+            for (const block of content) {
+              if (block.type === "tool_use" && block.name === "Bash") {
+                const cmd = (block.input && block.input.command) || "";
+                if (/git\\s+commit/i.test(cmd)) commits++;
+                if (/gh\\s+pr\\s+create/i.test(cmd)) pullRequests++;
+              }
+            }
+          }
         }
-        if (model) modelsSet.add(model);
+
+        // tool_result에서 성공한 git commit 확인 (실패한 건 카운트 제외)
+        if (entry.type === "tool" && entry.message && entry.message.content) {
+          const tc = entry.message.content;
+          if (Array.isArray(tc)) {
+            for (const block of tc) {
+              if (block.type === "tool_result" && typeof block.content === "string") {
+                if (/^\\[main |^\\[master |^\\[HEAD/.test(block.content)) {
+                  // git commit 성공 결과 — 이미 위에서 카운트했으므로 스킵
+                }
+              }
+            }
+          }
+        }
       } catch {}
     }
 
@@ -246,6 +277,8 @@ process.stdin.on("end", () => {
       cache_read_tokens: deltaCacheRead,
       total_tokens: deltaTotal,
       total_cost: Math.round(deltaCost * 100) / 100,
+      commits: commits,
+      pull_requests: pullRequests,
       models_used: Array.from(modelsSet),
     });
 
