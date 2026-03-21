@@ -1,14 +1,8 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { getCategoryById } from "@/lib/job-categories";
-
-async function getSessionUserId(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const session = cookieStore.get("ai-camp-session");
-  return session?.value ?? null;
-}
+import { getSessionUserId } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   const userId = await getSessionUserId();

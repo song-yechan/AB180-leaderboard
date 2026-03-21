@@ -1,72 +1,13 @@
 "use client";
 
+import CohortBadge from "@/components/ui/CohortBadge";
 import CountUp from "./CountUp";
-import { calculateXP, getLevel } from "@/lib/level-system";
+import { formatNumber } from "@/lib/format";
+import { calculateTotalTokens, calculateXP, getLevel } from "@/lib/level-system";
+import type { UserData } from "@/lib/types";
 
 interface UserProfileProps {
-  user: {
-    user_id: string;
-    name: string;
-    avatar_url: string | null;
-    role: string;
-    cohort?: number | null;
-    total_cost: number;
-    sessions_count: number;
-    commits?: number;
-    current_streak: number;
-    longest_streak: number;
-    input_tokens?: number;
-    output_tokens?: number;
-    cache_read_tokens?: number;
-    cache_creation_tokens?: number;
-  };
-}
-
-function Avatar({
-  url,
-  name,
-  size = 64,
-}: {
-  url: string | null;
-  name: string;
-  size?: number;
-}) {
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt={name}
-        width={size}
-        height={size}
-        className="rounded-full ring-2 ring-camp-border"
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-
-  return (
-    <span
-      className="flex items-center justify-center rounded-full bg-camp-surface-hover text-xl font-semibold text-camp-text-secondary"
-      style={{ width: size, height: size }}
-    >
-      {name.charAt(0).toUpperCase()}
-    </span>
-  );
-}
-
-function CohortBadge({ cohort }: { cohort: number }) {
-  if (cohort === 1) {
-    return (
-      <span className="inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400">
-        1기
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-400">
-      2기
-    </span>
-  );
+  user: UserData;
 }
 
 function RoleBadge({ role }: { role: string }) {
@@ -78,18 +19,12 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return String(n);
-}
-
 function TotalTokens({ user }: { user: UserProfileProps["user"] }) {
   const input = user.input_tokens ?? 0;
   const output = user.output_tokens ?? 0;
   const cacheRead = user.cache_read_tokens ?? 0;
   const cacheCreation = user.cache_creation_tokens ?? 0;
-  const total = input + output + cacheRead + cacheCreation;
+  const total = calculateTotalTokens(user);
 
   return (
     <div className="glass rounded-xl p-4">
@@ -97,24 +32,24 @@ function TotalTokens({ user }: { user: UserProfileProps["user"] }) {
         누적 토큰
       </h3>
       <div className="mb-3 font-mono text-2xl font-bold tabular-nums text-camp-text">
-        {formatTokens(total)}
+        {formatNumber(total)}
       </div>
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2">
           <span className="text-camp-text-secondary">Input</span>
-          <span className="font-mono tabular-nums text-camp-text">{formatTokens(input)}</span>
+          <span className="font-mono tabular-nums text-camp-text">{formatNumber(input)}</span>
         </div>
         <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2">
           <span className="text-camp-text-secondary">Output</span>
-          <span className="font-mono tabular-nums text-camp-text">{formatTokens(output)}</span>
+          <span className="font-mono tabular-nums text-camp-text">{formatNumber(output)}</span>
         </div>
         <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2">
           <span className="text-camp-text-secondary">Cache Read</span>
-          <span className="font-mono tabular-nums text-camp-text">{formatTokens(cacheRead)}</span>
+          <span className="font-mono tabular-nums text-camp-text">{formatNumber(cacheRead)}</span>
         </div>
         <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2">
           <span className="text-camp-text-secondary">Cache Create</span>
-          <span className="font-mono tabular-nums text-camp-text">{formatTokens(cacheCreation)}</span>
+          <span className="font-mono tabular-nums text-camp-text">{formatNumber(cacheCreation)}</span>
         </div>
       </div>
     </div>
@@ -122,11 +57,7 @@ function TotalTokens({ user }: { user: UserProfileProps["user"] }) {
 }
 
 function LevelCard({ user }: { user: UserProfileProps["user"] }) {
-  const input = user.input_tokens ?? 0;
-  const output = user.output_tokens ?? 0;
-  const cacheRead = user.cache_read_tokens ?? 0;
-  const cacheCreation = user.cache_creation_tokens ?? 0;
-  const totalTokens = input + output + cacheRead + cacheCreation;
+  const totalTokens = calculateTotalTokens(user);
   const xp = calculateXP(totalTokens, user.role);
   const level = getLevel(xp);
 
@@ -143,7 +74,7 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
               Lv.{level.level} {level.name}
             </span>
             <span className="font-mono text-xs tabular-nums text-camp-text-secondary">
-              {formatTokens(xp)} XP
+              {formatNumber(xp)} XP
             </span>
           </div>
           {/* Progress bar */}
@@ -155,7 +86,7 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
           </div>
           {level.next ? (
             <span className="text-[10px] text-camp-text-muted">
-              다음: ??? — {formatTokens(level.next.requiredXP - xp)} 토큰 더 필요
+              다음: ??? — {formatNumber(level.next.requiredXP - xp)} 토큰 더 필요
             </span>
           ) : (
             <span className="text-[10px] text-camp-accent">MAX LEVEL</span>
@@ -270,4 +201,4 @@ export default function UserProfile({ user }: UserProfileProps) {
   );
 }
 
-export { CohortBadge, RoleBadge, Avatar };
+export { RoleBadge };

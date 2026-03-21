@@ -23,6 +23,20 @@ export const LEVELS = [
   { level: 20, name: "뮤", icon: "/levels/Lv.20.png", requiredXP: 220_000_000 },
 ] as const;
 
+export function calculateTotalTokens(entry: {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_read_tokens?: number;
+  cache_creation_tokens?: number;
+}): number {
+  return (
+    (entry.input_tokens ?? 0) +
+    (entry.output_tokens ?? 0) +
+    (entry.cache_read_tokens ?? 0) +
+    (entry.cache_creation_tokens ?? 0)
+  );
+}
+
 export function calculateXP(totalTokens: number, role: string): number {
   const multiplier = role === "developer" ? 0.7 : 1.0;
   return Math.floor(totalTokens * multiplier);

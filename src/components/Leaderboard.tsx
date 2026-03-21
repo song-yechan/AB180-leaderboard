@@ -7,28 +7,20 @@ import CompareModal from "./CompareModal";
 import SpotlightCard from "@/components/reactbits/SpotlightCard";
 import AnimatedList from "@/components/reactbits/AnimatedList";
 import ElectricBorder from "@/components/reactbits/ElectricBorder";
-import type { LeaderboardEntry } from "@/lib/dummy-data";
+import CohortBadge from "@/components/ui/CohortBadge";
+import type { LeaderboardEntry } from "@/lib/types";
+import { formatNumber } from "@/lib/format";
 import { getCategoriesByGroup, getCategoryById } from "@/lib/job-categories";
-import { calculateXP, getLevel } from "@/lib/level-system";
+import { calculateTotalTokens, calculateXP, getLevel } from "@/lib/level-system";
 
 type Category = "all" | "camp" | "non-dev" | "dev";
 type Period = "today" | "week" | "all";
 
 function getLevelInfo(entry: LeaderboardEntry) {
-  const totalTokens =
-    (entry.input_tokens ?? 0) +
-    (entry.output_tokens ?? 0) +
-    (entry.cache_read_tokens ?? 0) +
-    (entry.cache_creation_tokens ?? 0);
+  const totalTokens = calculateTotalTokens(entry);
   const xp = calculateXP(totalTokens, entry.role);
   const level = getLevel(xp);
   return { icon: level.icon, name: level.name, level: level.level, xp };
-}
-
-function formatXP(xp: number): string {
-  if (xp >= 1_000_000) return `${(xp / 1_000_000).toFixed(1)}M XP`;
-  if (xp >= 1_000) return `${(xp / 1_000).toFixed(1)}K XP`;
-  return `${xp} XP`;
 }
 
 const CATEGORY_TABS: { key: Category; label: string }[] = [
@@ -130,54 +122,6 @@ function getRankMeta(rank: number) {
   return null;
 }
 
-function CohortPill({ cohort, show }: { cohort: number | null | undefined; show: boolean }) {
-  if (!show || !cohort) return null;
-  if (cohort === 1) {
-    return (
-      <span className="cohort-pill-amber inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-px text-[10px] font-medium text-amber-400">
-        1기
-      </span>
-    );
-  }
-  return (
-    <span className="cohort-pill-blue inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-1.5 py-px text-[10px] font-medium text-blue-400">
-      2기
-    </span>
-  );
-}
-
-function Avatar({
-  url,
-  name,
-  size = 32,
-}: {
-  url: string | null;
-  name: string;
-  size?: number;
-}) {
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt={name}
-        width={size}
-        height={size}
-        className="rounded-full ring-1 ring-camp-border"
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-
-  return (
-    <span
-      className="flex items-center justify-center rounded-full bg-camp-surface-hover text-xs font-medium text-camp-text-secondary"
-      style={{ width: size, height: size }}
-    >
-      {name.charAt(0).toUpperCase()}
-    </span>
-  );
-}
-
 function LeaderboardRow({
   entry,
   rank,
@@ -195,6 +139,7 @@ function LeaderboardRow({
   showCohort: boolean;
   showDevMetrics: boolean;
 }) {
+  const levelInfo = getLevelInfo(entry);
 
   return (
     <div
@@ -234,9 +179,9 @@ function LeaderboardRow({
                 {getCategoryById(entry.department)?.label ?? entry.department}
               </span>
             )}
-            <img src={getLevelInfo(entry).icon} alt={getLevelInfo(entry).name} width={20} height={20} className="size-5 shrink-0" title="레벨" />
+            <img src={levelInfo.icon} alt={levelInfo.name} width={20} height={20} className="size-5 shrink-0" title="레벨" />
             <span className="truncate text-sm font-semibold text-camp-text">{entry.name}</span>
-            <CohortPill cohort={entry.cohort} show={showCohort} />
+            {showCohort && <CohortBadge cohort={entry.cohort ?? null} size="sm" />}
             {entry.current_streak !== undefined && entry.current_streak > 0 && (
               <span className="shrink-0 text-[10px] text-camp-text-muted">
                 {"\uD83D\uDD25"}{" "}
@@ -559,7 +504,7 @@ export default function Leaderboard() {
                                 {entry.name}
                               </span>
                             </div>
-                            <CohortPill cohort={entry.cohort} show={showCohort} />
+                            {showCohort && <CohortBadge cohort={entry.cohort ?? null} size="sm" />}
                           </div>
 
                           {/* Streak */}
@@ -670,7 +615,7 @@ export default function Leaderboard() {
 
                         {/* XP */}
                         <span className="font-mono text-sm tabular-nums text-camp-text-secondary">
-                          {formatXP(levelInfo.xp)}
+                          {formatNumber(levelInfo.xp, " XP")}
                         </span>
                       </SpotlightCard>
                     </ElectricBorder>

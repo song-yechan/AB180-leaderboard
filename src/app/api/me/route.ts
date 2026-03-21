@@ -31,11 +31,9 @@ export async function GET() {
 
     return NextResponse.json(user);
   } catch (err) {
+    console.error("GET /api/me failed:", err);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: err instanceof Error ? err.message : String(err),
-      },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }

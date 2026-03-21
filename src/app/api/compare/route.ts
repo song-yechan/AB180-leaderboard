@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
     const supabase = await createServiceSupabase();
 
     const [{ data: userA, error: errA }, { data: userB, error: errB }] = await Promise.all([
-      supabase.from("users").select("*").eq("id", idA).single(),
-      supabase.from("users").select("*").eq("id", idB).single(),
+      supabase.from("users").select("id, name, avatar_url, role, department, cohort").eq("id", idA).single(),
+      supabase.from("users").select("id, name, avatar_url, role, department, cohort").eq("id", idB).single(),
     ]);
 
     if (errA || errB || !userA || !userB) {

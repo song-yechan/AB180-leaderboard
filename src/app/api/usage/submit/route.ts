@@ -68,8 +68,9 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (fetchError) {
+      console.error("usage/submit fetch error:", fetchError);
       return NextResponse.json(
-        { error: "Database error", details: fetchError.message },
+        { error: "Database error" },
         { status: 500 }
       );
     }
@@ -92,8 +93,9 @@ export async function POST(request: NextRequest) {
         .eq("id", existing.id);
 
       if (updateError) {
+        console.error("usage/submit update error:", updateError);
         return NextResponse.json(
-          { error: "Failed to update usage log", details: updateError.message },
+          { error: "Failed to update usage log" },
           { status: 500 }
         );
       }
@@ -115,8 +117,9 @@ export async function POST(request: NextRequest) {
         });
 
       if (insertError) {
+        console.error("usage/submit insert error:", insertError);
         return NextResponse.json(
-          { error: "Failed to insert usage log", details: insertError.message },
+          { error: "Failed to insert usage log" },
           { status: 500 }
         );
       }
@@ -125,8 +128,9 @@ export async function POST(request: NextRequest) {
     // 7. Success
     return NextResponse.json({ ok: true });
   } catch (err) {
+    console.error("POST /api/usage/submit failed:", err);
     return NextResponse.json(
-      { error: "Internal server error", details: err instanceof Error ? err.message : String(err) },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

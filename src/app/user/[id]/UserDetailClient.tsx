@@ -7,24 +7,7 @@ import UsageChart from "@/components/UsageChart";
 import StreakHeatmap from "@/components/StreakHeatmap";
 import BadgeGrid from "@/components/BadgeGrid";
 import { BADGE_TYPES } from "@/lib/constants";
-import type { FallbackDailyUsage, FallbackStreakEntry, FallbackEarnedBadge } from "@/lib/fallback-data";
-
-interface UserData {
-  user_id: string;
-  name: string;
-  avatar_url: string | null;
-  role: string;
-  cohort?: number | null;
-  total_cost: number;
-  sessions_count: number;
-  commits?: number;
-  current_streak: number;
-  longest_streak: number;
-  input_tokens?: number;
-  output_tokens?: number;
-  cache_read_tokens?: number;
-  cache_creation_tokens?: number;
-}
+import type { UserData, FallbackDailyUsage, FallbackStreakEntry, FallbackEarnedBadge } from "@/lib/types";
 
 interface Badge {
   type: string;

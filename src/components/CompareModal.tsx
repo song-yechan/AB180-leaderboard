@@ -2,24 +2,12 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import Avatar from "@/components/ui/Avatar";
+import CohortBadge from "@/components/ui/CohortBadge";
 import CompareBar from "@/components/CompareBar";
 import CompareChart from "@/components/CompareChart";
-import { Avatar, CohortBadge } from "@/components/UserProfile";
 import { BADGE_TYPES } from "@/lib/constants";
-import type { FallbackDailyUsage, FallbackEarnedBadge } from "@/lib/fallback-data";
-
-interface UserData {
-  user_id: string;
-  name: string;
-  avatar_url: string | null;
-  role: string;
-  cohort?: number | null;
-  total_cost: number;
-  sessions_count: number;
-  commits?: number;
-  current_streak: number;
-  longest_streak: number;
-}
+import type { UserData, FallbackDailyUsage, FallbackEarnedBadge } from "@/lib/types";
 
 interface Badge {
   type: string;
@@ -174,7 +162,7 @@ export default function CompareModal({ idA, idB, onClose }: CompareModalProps) {
             {/* Two user headers */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Link href={`/user/${userA.user_id}`} onClick={onClose} className="glass glass-hover flex items-center gap-4 rounded-2xl p-4 transition-all duration-200">
-                <Avatar url={userA.avatar_url} name={userA.name} size={44} />
+                <Avatar url={userA.avatar_url} name={userA.name} size={44} className="ring-2 ring-camp-border" />
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-camp-text">{userA.name}</span>
@@ -188,7 +176,7 @@ export default function CompareModal({ idA, idB, onClose }: CompareModalProps) {
               </Link>
 
               <Link href={`/user/${userB.user_id}`} onClick={onClose} className="glass glass-hover flex items-center gap-4 rounded-2xl p-4 transition-all duration-200">
-                <Avatar url={userB.avatar_url} name={userB.name} size={44} />
+                <Avatar url={userB.avatar_url} name={userB.name} size={44} className="ring-2 ring-camp-border" />
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-camp-text">{userB.name}</span>

@@ -14,7 +14,7 @@ export async function GET(
     // 유저 조회
     const { data: user, error: userError } = await supabase
       .from("users")
-      .select("*")
+      .select("id, name, avatar_url, role, department, cohort, max_streak")
       .eq("id", id)
       .single();
 

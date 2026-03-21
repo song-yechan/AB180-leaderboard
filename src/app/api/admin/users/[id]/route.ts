@@ -1,7 +1,7 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServiceSupabase } from "@/lib/supabase/server";
+import { getSessionUserId } from "@/lib/auth";
 
 function getAdminUserIds(): string[] {
   const raw = process.env.ADMIN_USER_IDS ?? "";
@@ -9,12 +9,6 @@ function getAdminUserIds(): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-}
-
-async function getSessionUserId(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const session = cookieStore.get("ai-camp-session");
-  return session?.value ?? null;
 }
 
 export async function PATCH(
