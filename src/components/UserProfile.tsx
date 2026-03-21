@@ -136,7 +136,7 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
         레벨
       </h3>
       <div className="flex items-center gap-4">
-        <img src={level.icon} alt={level.name} width={48} height={48} className="size-12" />
+        <img src={level.icon} alt={level.name} width={80} height={80} className="size-20" style={{ imageRendering: "pixelated" }} />
         <div className="flex flex-1 flex-col gap-1.5">
           <div className="flex items-baseline justify-between">
             <span className="text-lg font-bold text-camp-text">

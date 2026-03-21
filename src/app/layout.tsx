@@ -37,7 +37,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="relative min-h-full flex flex-col bg-camp-bg text-camp-text overflow-x-hidden">
+      <body suppressHydrationWarning className="relative min-h-full flex flex-col bg-camp-bg text-camp-text overflow-x-hidden">
         <NavBar />
         <main className="flex flex-1 flex-col">{children}</main>
         <AgentationProvider />
