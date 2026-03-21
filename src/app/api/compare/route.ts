@@ -14,39 +14,39 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Try Supabase first
   try {
     const supabase = await createServiceSupabase();
 
-    const [{ data: userA }, { data: userB }] = await Promise.all([
+    const [{ data: userA, error: errA }, { data: userB, error: errB }] = await Promise.all([
       supabase.from("users").select("*").eq("id", idA).single(),
       supabase.from("users").select("*").eq("id", idB).single(),
     ]);
 
-    if (userA && userB) {
-      const [{ data: dailyA }, { data: dailyB }, { data: earnedA }, { data: earnedB }] =
-        await Promise.all([
-          supabase.from("daily_usage").select("*").eq("user_id", idA).order("date", { ascending: true }),
-          supabase.from("daily_usage").select("*").eq("user_id", idB).order("date", { ascending: true }),
-          supabase.from("badges").select("*").eq("user_id", idA),
-          supabase.from("badges").select("*").eq("user_id", idB),
-        ]);
-
-      return NextResponse.json({
-        userA,
-        userB,
-        dailyA: dailyA ?? [],
-        dailyB: dailyB ?? [],
-        badges: {
-          all: BADGE_TYPES,
-          earnedA: earnedA ?? [],
-          earnedB: earnedB ?? [],
-        },
-      });
+    if (errA || errB || !userA || !userB) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-  } catch (err) {
-    console.error("Failed to fetch compare data from Supabase:", err);
-  }
 
-  return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const [{ data: dailyA }, { data: dailyB }, { data: earnedA }, { data: earnedB }] =
+      await Promise.all([
+        supabase.from("usage_logs").select("date, total_cost, sessions_count").eq("user_id", idA).order("date", { ascending: true }),
+        supabase.from("usage_logs").select("date, total_cost, sessions_count").eq("user_id", idB).order("date", { ascending: true }),
+        supabase.from("badges").select("*").eq("user_id", idA),
+        supabase.from("badges").select("*").eq("user_id", idB),
+      ]);
+
+    return NextResponse.json({
+      userA,
+      userB,
+      dailyA: (dailyA ?? []).map((d) => ({ date: d.date, cost: Number(d.total_cost ?? 0), sessions: d.sessions_count ?? 0 })),
+      dailyB: (dailyB ?? []).map((d) => ({ date: d.date, cost: Number(d.total_cost ?? 0), sessions: d.sessions_count ?? 0 })),
+      badges: {
+        all: BADGE_TYPES,
+        earnedA: earnedA ?? [],
+        earnedB: earnedB ?? [],
+      },
+    });
+  } catch (err) {
+    console.error("Failed to fetch compare data:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
