@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -129,9 +128,11 @@ export async function GET(request: NextRequest) {
       .eq("id", user.id);
   }
 
-  // Set session cookie
-  const cookieStore = await cookies();
-  cookieStore.set("ai-camp-session", user.id, {
+  // Build redirect response with session cookie attached
+  const redirectUrl = isNewUser ? `${appUrl}/onboarding` : appUrl;
+  const response = NextResponse.redirect(redirectUrl);
+
+  response.cookies.set("ai-camp-session", user.id, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -139,10 +140,5 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 30, // 30 days
   });
 
-  // New user -> onboarding, existing user -> home
-  if (isNewUser) {
-    return NextResponse.redirect(`${appUrl}/onboarding`);
-  }
-
-  return NextResponse.redirect(appUrl);
+  return response;
 }

@@ -7,8 +7,7 @@ import CompareModal from "./CompareModal";
 import SpotlightCard from "@/components/reactbits/SpotlightCard";
 import AnimatedList from "@/components/reactbits/AnimatedList";
 import ElectricBorder from "@/components/reactbits/ElectricBorder";
-import { DUMMY_LEADERBOARD, type LeaderboardEntry } from "@/lib/dummy-data";
-import { COHORTS } from "@/lib/constants";
+import type { LeaderboardEntry } from "@/lib/dummy-data";
 import { getCategoriesByGroup, getCategoryById } from "@/lib/job-categories";
 import { calculateXP, getLevel } from "@/lib/level-system";
 
@@ -56,16 +55,13 @@ const PERIOD_TABS: { key: Period; label: string }[] = [
 ];
 
 function enrichWithCohortAndStreak(entries: LeaderboardEntry[]): LeaderboardEntry[] {
-  return entries.map((e) => {
-    const seed = parseInt(e.user_id, 10) || 1;
-    return {
-      ...e,
-      cohort: e.cohort ?? COHORTS[e.user_id] ?? null,
-      current_streak: e.current_streak ?? ((seed * 3 + 5) % 20),
-      commits: e.commits ?? ((seed * 7 + 3) % 50),
-      pull_requests: e.pull_requests ?? ((seed * 2 + 1) % 15),
-    };
-  });
+  return entries.map((e) => ({
+    ...e,
+    cohort: e.cohort ?? null,
+    current_streak: e.current_streak ?? 0,
+    commits: e.commits ?? 0,
+    pull_requests: e.pull_requests ?? 0,
+  }));
 }
 
 function filterByCategory(entries: LeaderboardEntry[], category: Category): LeaderboardEntry[] {
@@ -302,20 +298,16 @@ export default function Leaderboard() {
         `/api/usage?period=${periodParam}&category=${apiCategory}`
       );
       if (!res.ok) {
-        setRawData(enrichWithCohortAndStreak(DUMMY_LEADERBOARD));
+        setRawData([]);
         return;
       }
       const json = await res.json();
       const leaderboard = Array.isArray(json.leaderboard)
         ? json.leaderboard
         : [];
-      if (leaderboard.length === 0) {
-        setRawData(enrichWithCohortAndStreak(DUMMY_LEADERBOARD));
-      } else {
-        setRawData(enrichWithCohortAndStreak(leaderboard));
-      }
+      setRawData(enrichWithCohortAndStreak(leaderboard));
     } catch {
-      setRawData(enrichWithCohortAndStreak(DUMMY_LEADERBOARD));
+      setRawData([]);
     } finally {
       setLoading(false);
       setAnimationKey((prev) => prev + 1);
@@ -474,11 +466,26 @@ export default function Leaderboard() {
 
       {/* Empty state */}
       {!loading && data.length === 0 && (
-        <div className="glass flex flex-col items-center justify-center gap-3 rounded-2xl py-24">
-          <span className="text-3xl">-</span>
-          <span className="text-sm text-camp-text-secondary">
-            아직 사용 기록이 없습니다
-          </span>
+        <div className="glass flex flex-col items-center justify-center gap-5 rounded-2xl px-6 py-24">
+          <span className="text-4xl">--</span>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-lg font-semibold text-camp-text">
+              아직 데이터가 없습니다
+            </span>
+            <span className="text-center text-sm leading-relaxed text-camp-text-secondary">
+              Claude Code 사용량이 집계되면 여기에 리더보드가 표시됩니다.
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs text-camp-text-muted">
+              시작하려면:
+            </p>
+            <ol className="list-inside list-decimal space-y-1 text-xs leading-relaxed text-camp-text-muted">
+              <li>우측 상단에서 Google 계정으로 로그인</li>
+              <li>CLI 설정 명령어를 터미널에 붙여넣기</li>
+              <li>Claude Code를 사용하면 자동으로 집계됩니다</li>
+            </ol>
+          </div>
         </div>
       )}
 

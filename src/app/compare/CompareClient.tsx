@@ -6,9 +6,7 @@ import Link from "next/link";
 import CompareBar from "@/components/CompareBar";
 import CompareChart from "@/components/CompareChart";
 import { Avatar, CohortBadge } from "@/components/UserProfile";
-import { DUMMY_LEADERBOARD } from "@/lib/dummy-data";
-import { BADGE_TYPES, COHORTS } from "@/lib/constants";
-import { generateFallbackDaily, getFallbackBadges } from "@/lib/fallback-data";
+import { BADGE_TYPES } from "@/lib/constants";
 import type { FallbackDailyUsage, FallbackEarnedBadge } from "@/lib/fallback-data";
 
 interface UserData {
@@ -68,29 +66,7 @@ export default function CompareClient() {
           throw new Error("API failed");
         }
       } catch {
-        // Fallback
-        const dA = DUMMY_LEADERBOARD.find((u) => u.user_id === idA);
-        const dB = DUMMY_LEADERBOARD.find((u) => u.user_id === idB);
-        if (dA && dB) {
-          const sA = parseInt(idA!, 10) || 1;
-          const sB = parseInt(idB!, 10) || 1;
-          setUserA({
-            ...dA,
-            cohort: COHORTS[idA!] ?? null,
-            current_streak: (sA * 3 + 5) % 20,
-            longest_streak: (sA * 5 + 10) % 40,
-          });
-          setUserB({
-            ...dB,
-            cohort: COHORTS[idB!] ?? null,
-            current_streak: (sB * 3 + 5) % 20,
-            longest_streak: (sB * 5 + 10) % 40,
-          });
-          setDailyA(generateFallbackDaily(idA!));
-          setDailyB(generateFallbackDaily(idB!));
-          setEarnedA(getFallbackBadges(idA!));
-          setEarnedB(getFallbackBadges(idB!));
-        }
+        // Error — userA/userB stay null, "not found" UI will show
       } finally {
         setLoading(false);
       }

@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { DUMMY_LEADERBOARD } from "@/lib/dummy-data";
-import { BADGE_TYPES, COHORTS } from "@/lib/constants";
-import { generateFallbackDaily, generateFallbackStreak, getFallbackBadges } from "@/lib/fallback-data";
+import { BADGE_TYPES } from "@/lib/constants";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
 export async function GET(
@@ -48,31 +46,9 @@ export async function GET(
         },
       });
     }
-  } catch {
-    // Supabase unavailable — fall through to dummy data
+  } catch (err) {
+    console.error("Failed to fetch user from Supabase:", err);
   }
 
-  // Fallback to dummy data
-  const user = DUMMY_LEADERBOARD.find((u) => u.user_id === id);
-
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  const seed = parseInt(id, 10) || 1;
-
-  return NextResponse.json({
-    user: {
-      ...user,
-      cohort: COHORTS[id] ?? null,
-      current_streak: (seed * 3 + 5) % 20,
-      longest_streak: (seed * 5 + 10) % 40,
-    },
-    dailyUsage: generateFallbackDaily(id),
-    streakData: generateFallbackStreak(id),
-    badges: {
-      all: BADGE_TYPES,
-      earned: getFallbackBadges(id),
-    },
-  });
+  return NextResponse.json({ error: "User not found" }, { status: 404 });
 }

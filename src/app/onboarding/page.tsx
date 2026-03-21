@@ -17,9 +17,14 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<JobCategoryId | null>(null);
   const [completed, setCompleted] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
 
   async function handleSubmit() {
-    if (!selected) return;
+    if (!selected) {
+      setShowValidation(true);
+      return;
+    }
+    setShowValidation(false);
     setLoading(true);
     try {
       const res = await fetch("/api/onboarding", {
@@ -123,10 +128,17 @@ export default function OnboardingPage() {
           </div>
         </div>
 
+        {/* Validation message */}
+        {showValidation && !selected && (
+          <p className="text-sm text-red-400">
+            직군을 선택해주세요.
+          </p>
+        )}
+
         {/* Submit button */}
         <button
           type="button"
-          disabled={loading || !selected}
+          disabled={loading}
           onClick={handleSubmit}
           className="w-full max-w-xs cursor-pointer rounded-xl bg-camp-accent px-6 py-3 text-sm font-semibold text-black transition-all hover:bg-camp-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >

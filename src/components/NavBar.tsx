@@ -1,9 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import SetupTooltip from "./SetupTooltip";
 
+interface MeUser {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+}
 
 const NAV_LINKS = [
   { href: "/", label: "리더보드" },
@@ -12,10 +18,38 @@ const NAV_LINKS = [
 
 export default function NavBar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<MeUser | null>(null);
+  const [checked, setChecked] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.id) {
+          setUser({ id: data.id, name: data.name, avatar_url: data.avatar_url });
+        }
+      })
+      .catch(() => setUser(null))
+      .finally(() => setChecked(true));
+  }, []);
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
+  }
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      setUser(null);
+      router.push("/");
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   return (
@@ -56,12 +90,45 @@ export default function NavBar() {
             ))}
             <SetupTooltip />
 
-            <Link
-              href="/auth"
-              className="ml-2 cursor-pointer rounded-lg bg-camp-accent px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-camp-accent-hover"
-            >
-              로그인
-            </Link>
+            {checked && user ? (
+              <div className="ml-2 flex items-center gap-2">
+                <Link
+                  href={`/user/${user.id}`}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-camp-text transition-colors hover:bg-camp-surface-hover"
+                >
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.name}
+                      width={24}
+                      height={24}
+                      className="rounded-full ring-1 ring-camp-border"
+                    />
+                  ) : (
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-camp-surface-hover text-xs font-medium text-camp-text-secondary">
+                      {user.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  {user.name}
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-camp-text-secondary transition-colors hover:text-camp-text disabled:cursor-not-allowed disabled:opacity-50"
+                  title="로그아웃"
+                >
+                  {loggingOut ? "..." : "로그아웃"}
+                </button>
+              </div>
+            ) : checked ? (
+              <Link
+                href="/auth"
+                className="ml-2 cursor-pointer rounded-lg bg-camp-accent px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-camp-accent-hover"
+              >
+                로그인
+              </Link>
+            ) : null}
           </div>
         </div>
       </nav>
@@ -117,30 +184,57 @@ export default function NavBar() {
               )}
             </Link>
           ))}
-          <Link
-            href="/auth"
-            className={`flex flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-xs font-medium transition-colors ${
-              pathname === "/auth"
-                ? "text-camp-accent"
-                : "text-camp-text-secondary hover:text-camp-text"
-            }`}
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+          {checked && user ? (
+            <Link
+              href={`/user/${user.id}`}
+              className={`flex flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-xs font-medium transition-colors ${
+                pathname.startsWith("/user")
+                  ? "text-camp-accent"
+                  : "text-camp-text-secondary hover:text-camp-text"
+              }`}
             >
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-            로그인
-          </Link>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              {user.name}
+            </Link>
+          ) : checked ? (
+            <Link
+              href="/auth"
+              className={`flex flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 text-xs font-medium transition-colors ${
+                pathname === "/auth"
+                  ? "text-camp-accent"
+                  : "text-camp-text-secondary hover:text-camp-text"
+              }`}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              로그인
+            </Link>
+          ) : null}
         </div>
       </nav>
     </>

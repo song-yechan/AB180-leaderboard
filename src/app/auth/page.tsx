@@ -1,4 +1,27 @@
+"use client";
+
+import { useSearchParams } from "next/navigation";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  unauthorized_domain:
+    "AB180 Google Workspace 계정(@ab180.co)만 사용할 수 있습니다.",
+  token_exchange_failed:
+    "Google 인증에 실패했습니다. 다시 시도해주세요.",
+  userinfo_failed:
+    "Google 계정 정보를 가져올 수 없습니다. 다시 시도해주세요.",
+  db_error:
+    "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+  no_code:
+    "인증 코드가 없습니다. 다시 시도해주세요.",
+  access_denied:
+    "로그인이 취소되었습니다.",
+};
+
 export default function AuthPage() {
+  const searchParams = useSearchParams();
+  const errorCode = searchParams.get("error");
+  const errorMessage = errorCode ? ERROR_MESSAGES[errorCode] ?? "로그인 중 문제가 발생했습니다. 다시 시도해주세요." : null;
+
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="glass flex flex-col items-center gap-8 rounded-2xl px-12 py-16">
@@ -8,6 +31,15 @@ export default function AuthPage() {
             AB180 Google Workspace 계정(@ab180.co)으로 로그인하세요
           </p>
         </div>
+
+        {errorMessage && (
+          <div className="w-full rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3">
+            <p className="text-center text-sm text-red-400">
+              {errorMessage}
+            </p>
+          </div>
+        )}
+
         <a
           href="/api/auth/google"
           className="flex h-12 cursor-pointer items-center gap-3 rounded-xl bg-camp-accent px-6 text-sm font-semibold text-black transition-colors hover:bg-camp-accent-hover"

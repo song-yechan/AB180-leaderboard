@@ -6,9 +6,7 @@ import UserProfile from "@/components/UserProfile";
 import UsageChart from "@/components/UsageChart";
 import StreakHeatmap from "@/components/StreakHeatmap";
 import BadgeGrid from "@/components/BadgeGrid";
-import { DUMMY_LEADERBOARD } from "@/lib/dummy-data";
-import { BADGE_TYPES, COHORTS } from "@/lib/constants";
-import { generateFallbackDaily, generateFallbackStreak, getFallbackBadges } from "@/lib/fallback-data";
+import { BADGE_TYPES } from "@/lib/constants";
 import type { FallbackDailyUsage, FallbackStreakEntry, FallbackEarnedBadge } from "@/lib/fallback-data";
 
 interface UserData {
@@ -64,20 +62,7 @@ export default function UserDetailClient({ userId }: { userId: string }) {
           throw new Error("API failed");
         }
       } catch {
-        // Fallback to dummy data
-        const dummy = DUMMY_LEADERBOARD.find((u) => u.user_id === userId);
-        if (dummy) {
-          const seed = parseInt(userId, 10) || 1;
-          setUser({
-            ...dummy,
-            cohort: COHORTS[userId] ?? null,
-            current_streak: (seed * 3 + 5) % 20,
-            longest_streak: (seed * 5 + 10) % 40,
-          });
-          setDailyUsage(generateFallbackDaily(userId));
-          setStreakData(generateFallbackStreak(userId));
-          setEarnedBadges(getFallbackBadges(userId));
-        }
+        // Error — user stays null, "not found" UI will show
       } finally {
         setLoading(false);
       }
@@ -87,10 +72,36 @@ export default function UserDetailClient({ userId }: { userId: string }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="flex items-center gap-3">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-camp-accent" />
-          <span className="text-sm text-camp-text-secondary">불러오는 중...</span>
+      <div className="flex flex-col gap-8 animate-pulse">
+        {/* Back link skeleton */}
+        <div className="h-4 w-24 rounded bg-camp-surface" />
+
+        {/* Profile skeleton */}
+        <div className="glass rounded-2xl p-6">
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 rounded-full bg-camp-surface" />
+            <div className="flex flex-col gap-2">
+              <div className="h-5 w-32 rounded bg-camp-surface" />
+              <div className="h-3 w-48 rounded bg-camp-surface" />
+            </div>
+          </div>
+        </div>
+
+        {/* Stat cards skeleton */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="glass flex flex-col items-center gap-2 rounded-xl px-4 py-4">
+              <div className="h-5 w-5 rounded bg-camp-surface" />
+              <div className="h-3 w-12 rounded bg-camp-surface" />
+              <div className="h-5 w-16 rounded bg-camp-surface" />
+            </div>
+          ))}
+        </div>
+
+        {/* Chart skeleton */}
+        <div className="glass rounded-xl p-4">
+          <div className="h-4 w-24 rounded bg-camp-surface mb-4" />
+          <div className="h-48 rounded bg-camp-surface" />
         </div>
       </div>
     );

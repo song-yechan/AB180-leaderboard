@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { DUMMY_LEADERBOARD } from "@/lib/dummy-data";
 
 // GET: 리더보드 데이터 조회
 export async function GET(request: NextRequest) {
@@ -8,7 +7,6 @@ export async function GET(request: NextRequest) {
   const period = searchParams.get("period") ?? "all";
   const category = searchParams.get("category") ?? "all";
 
-  // Supabase 연결 시도, 실패 시 더미 데이터
   try {
     const { createServiceSupabase } = await import("@/lib/supabase/server");
     const supabase = await createServiceSupabase();
@@ -91,20 +89,8 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.total_cost - a.total_cost);
 
     return NextResponse.json({ leaderboard });
-  } catch {
-    // Supabase 미연결 시 더미 데이터 반환
-    let data = [...DUMMY_LEADERBOARD];
-
-    if (category === "dev") {
-      data = data.filter((e) => e.role === "developer");
-    } else if (category === "non-dev") {
-      data = data.filter((e) => e.role === "non-developer");
-    } else if (category === "camp") {
-      data = data.filter((e) => e.cohort != null);
-    }
-
-    return NextResponse.json({
-      leaderboard: data.sort((a, b) => b.total_cost - a.total_cost),
-    });
+  } catch (err) {
+    console.error("Failed to fetch leaderboard from Supabase:", err);
+    return NextResponse.json({ leaderboard: [] });
   }
 }

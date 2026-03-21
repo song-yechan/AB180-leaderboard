@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { DUMMY_LEADERBOARD } from "@/lib/dummy-data";
-import { BADGE_TYPES, COHORTS } from "@/lib/constants";
-import { generateFallbackDaily, getFallbackBadges } from "@/lib/fallback-data";
+import { BADGE_TYPES } from "@/lib/constants";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
@@ -46,40 +44,9 @@ export async function GET(request: NextRequest) {
         },
       });
     }
-  } catch {
-    // Supabase unavailable — fall through to dummy data
+  } catch (err) {
+    console.error("Failed to fetch compare data from Supabase:", err);
   }
 
-  // Fallback to dummy data
-  const userA = DUMMY_LEADERBOARD.find((u) => u.user_id === idA);
-  const userB = DUMMY_LEADERBOARD.find((u) => u.user_id === idB);
-
-  if (!userA || !userB) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  const seedA = parseInt(idA, 10) || 1;
-  const seedB = parseInt(idB, 10) || 1;
-
-  return NextResponse.json({
-    userA: {
-      ...userA,
-      cohort: COHORTS[idA] ?? null,
-      current_streak: (seedA * 3 + 5) % 20,
-      longest_streak: (seedA * 5 + 10) % 40,
-    },
-    userB: {
-      ...userB,
-      cohort: COHORTS[idB] ?? null,
-      current_streak: (seedB * 3 + 5) % 20,
-      longest_streak: (seedB * 5 + 10) % 40,
-    },
-    dailyA: generateFallbackDaily(idA),
-    dailyB: generateFallbackDaily(idB),
-    badges: {
-      all: BADGE_TYPES,
-      earnedA: getFallbackBadges(idA),
-      earnedB: getFallbackBadges(idB),
-    },
-  });
+  return NextResponse.json({ error: "User not found" }, { status: 404 });
 }

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import CountUp from "./CountUp";
-import { DUMMY_STATS } from "@/lib/dummy-data";
 
 interface StatsData {
   totalParticipants: number;
@@ -18,20 +17,13 @@ export default function HeroStats() {
       try {
         const res = await fetch("/api/usage?period=all&category=all");
         if (!res.ok) {
-          if (process.env.NODE_ENV === "development") {
-            setStats(DUMMY_STATS);
-          }
+          setStats({ totalParticipants: 0, totalCost: 0, totalSessions: 0 });
           return;
         }
         const json = await res.json();
         const leaderboard = Array.isArray(json.leaderboard)
           ? json.leaderboard
           : [];
-
-        if (leaderboard.length === 0 && process.env.NODE_ENV === "development") {
-          setStats(DUMMY_STATS);
-          return;
-        }
 
         setStats({
           totalParticipants: leaderboard.length,
@@ -46,9 +38,7 @@ export default function HeroStats() {
           ),
         });
       } catch {
-        if (process.env.NODE_ENV === "development") {
-          setStats(DUMMY_STATS);
-        }
+        setStats({ totalParticipants: 0, totalCost: 0, totalSessions: 0 });
       }
     }
 
