@@ -68,32 +68,40 @@ export default function SetupGuide() {
         터미널에 아래 한 줄만 붙여넣기하세요:
       </p>
 
-      <div className="relative mb-4 rounded-lg bg-camp-bg p-4">
-        <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-sm text-amber-300">
+      <div className="mb-3 rounded-lg border border-camp-border bg-camp-bg p-4">
+        <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-sm text-camp-accent">
           {curlCommand}
         </pre>
-        <button
-          onClick={handleCopy}
-          className="absolute right-2 top-2 rounded-md bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/30"
-        >
-          {copied ? "복사됨!" : "복사"}
-        </button>
       </div>
 
+      <button
+        onClick={handleCopy}
+        className="mb-4 w-full cursor-pointer rounded-lg bg-camp-accent px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-camp-accent-hover"
+      >
+        {copied ? "복사됨!" : "명령어 복사하기"}
+      </button>
+
       <details className="group">
-        <summary className="cursor-pointer text-sm text-camp-text-secondary transition-colors hover:text-camp-text-secondary">
-          이게 뭘 하는 건가요?
+        <summary className="cursor-pointer text-sm text-camp-text-secondary transition-colors hover:text-camp-text">
+          어떻게 하나요?
         </summary>
-        <ul className="mt-2 space-y-1 pl-4 text-sm text-camp-text-muted">
+        <ol className="mt-3 space-y-2 pl-1 text-sm text-camp-text-muted">
           <li className="flex items-start gap-2">
-            <span className="mt-1.5 block h-1 w-1 flex-shrink-0 rounded-full bg-camp-text-muted" />
-            내 계정 인증 토큰을 ~/.config/ai-camp/에 저장
+            <span className="shrink-0 font-mono text-camp-accent">1.</span>
+            <span>Mac: <strong className="text-camp-text">Cmd+Space</strong> → "터미널" 검색 → 실행</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="mt-1.5 block h-1 w-1 flex-shrink-0 rounded-full bg-camp-text-muted" />
-            Claude Code에 Stop 훅을 설치 — 세션 종료 시 사용량 자동 전송
+            <span className="shrink-0 font-mono text-camp-accent">2.</span>
+            <span>위 명령어를 복사해서 붙여넣기 (<strong className="text-camp-text">Cmd+V</strong>)</span>
           </li>
-        </ul>
+          <li className="flex items-start gap-2">
+            <span className="shrink-0 font-mono text-camp-accent">3.</span>
+            <span><strong className="text-camp-text">Enter</strong> 누르면 설정 완료!</span>
+          </li>
+        </ol>
+        <p className="mt-2 text-xs text-camp-text-muted">
+          한 번만 하면 됩니다. 이후 Claude Code를 쓸 때마다 사용량이 자동으로 리더보드에 반영됩니다.
+        </p>
       </details>
     </div>
   );

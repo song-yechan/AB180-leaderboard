@@ -65,9 +65,9 @@ export default function SetupTooltip() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-camp-border bg-camp-surface p-4 shadow-lg sm:w-96">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-semibold text-camp-text">
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-camp-border bg-camp-bg p-4 shadow-xl sm:w-96">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm font-semibold text-camp-text">
               CLI 설정
             </span>
             <button
@@ -90,19 +90,37 @@ export default function SetupTooltip() {
               </svg>
             </button>
           </div>
-          <p className="mb-2 text-[11px] text-camp-text-secondary">
-            터미널에 붙여넣기하세요:
+          <p className="mb-3 text-xs leading-relaxed text-camp-text-secondary">
+            Claude Code 사용량을 자동으로 리더보드에 반영하려면
+            <br />
+            아래 명령어를 터미널에 붙여넣기하세요.
           </p>
-          <div className="relative rounded-lg bg-camp-bg p-3">
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-amber-300">
+          <div className="rounded-lg bg-camp-surface p-3">
+            <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-camp-accent">
               {curlCommand}
             </pre>
-            <button
-              onClick={handleCopy}
-              className="absolute right-1.5 top-1.5 cursor-pointer rounded bg-amber-500/20 px-2 py-1 text-[10px] font-medium text-amber-400 transition-colors hover:bg-amber-500/30"
-            >
-              {copied ? "복사됨!" : "복사"}
-            </button>
+          </div>
+          <button
+            onClick={handleCopy}
+            className="mt-2 w-full cursor-pointer rounded-lg bg-camp-accent px-3 py-2 text-xs font-semibold text-camp-bg transition-colors hover:bg-camp-accent-hover"
+          >
+            {copied ? "복사됨!" : "명령어 복사"}
+          </button>
+          <div className="mt-3 border-t border-camp-border pt-3">
+            <p className="mb-1.5 text-[11px] font-medium text-camp-text-secondary">
+              어떻게 하나요?
+            </p>
+            <ol className="list-inside list-decimal space-y-1 text-[11px] leading-relaxed text-camp-text-muted">
+              <li>
+                Mac: Cmd+Space &rarr; &ldquo;터미널&rdquo; 검색 &rarr; 실행
+              </li>
+              <li>위 명령어를 복사해서 붙여넣기 (Cmd+V)</li>
+              <li>Enter 누르면 설정 완료!</li>
+            </ol>
+            <p className="mt-2 text-[11px] text-camp-text-muted">
+              한 번만 하면 됩니다. 이후 Claude Code를 쓸 때마다 자동
+              집계됩니다.
+            </p>
           </div>
         </div>
       )}

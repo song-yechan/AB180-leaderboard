@@ -90,7 +90,7 @@ export default function OnboardingPage() {
                 className={`glass flex cursor-pointer flex-col items-center gap-1 rounded-xl px-4 py-4 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
                   selected === cat.id
                     ? "border-2 border-amber-500 text-camp-accent"
-                    : "border border-transparent text-camp-text hover:bg-white/[0.08]"
+                    : "border border-camp-border text-camp-text hover:bg-camp-surface-hover"
                 }`}
               >
                 {cat.label}
@@ -114,7 +114,7 @@ export default function OnboardingPage() {
                 className={`glass flex cursor-pointer flex-col items-center gap-1 rounded-xl px-4 py-4 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
                   selected === cat.id
                     ? "border-2 border-amber-500 text-camp-accent"
-                    : "border border-transparent text-camp-text hover:bg-white/[0.08]"
+                    : "border border-camp-border text-camp-text hover:bg-camp-surface-hover"
                 }`}
               >
                 {cat.label}
