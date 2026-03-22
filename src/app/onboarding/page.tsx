@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  JOB_CATEGORIES,
   getCategoriesByGroup,
   type JobCategoryId,
 } from "@/lib/job-categories";
@@ -11,6 +10,69 @@ import SetupGuide from "@/components/SetupGuide";
 
 const DEV_CATEGORIES = getCategoriesByGroup("developer");
 const NON_DEV_CATEGORIES = getCategoriesByGroup("non-developer");
+
+function SetupStep({ onComplete }: { onComplete: () => void }) {
+  const [setupDone, setSetupDone] = useState(false);
+
+  const checkSetup = useCallback(async () => {
+    try {
+      const res = await fetch("/api/me");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.setup_completed) {
+        setSetupDone(true);
+      }
+    } catch {}
+  }, []);
+
+  // 3초마다 setup_completed 폴링
+  useEffect(() => {
+    checkSetup();
+    const interval = setInterval(checkSetup, 3000);
+    return () => clearInterval(interval);
+  }, [checkSetup]);
+
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center px-4 py-8">
+      <div className="flex w-full max-w-2xl flex-col items-center gap-8">
+        <h1 className="text-2xl font-bold text-camp-text">
+          {setupDone ? "설정 완료!" : "CLI 설정을 진행하세요"}
+        </h1>
+        <p className="text-center text-sm text-camp-text-secondary">
+          {setupDone
+            ? "사용량 추적이 시작됩니다. 리더보드로 이동하세요."
+            : "아래 명령어를 터미널에 붙여넣기하면 자동으로 다음 단계로 넘어갑니다."}
+        </p>
+
+        {!setupDone && (
+          <div className="w-full">
+            <SetupGuide />
+          </div>
+        )}
+
+        {setupDone && (
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-4xl">🎉</span>
+            <span className="text-sm text-camp-accent">설정이 감지되었습니다</span>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={onComplete}
+          disabled={!setupDone}
+          className={`w-full max-w-xs rounded-xl px-6 py-3 text-sm font-semibold transition-all ${
+            setupDone
+              ? "cursor-pointer bg-camp-accent text-black hover:bg-camp-accent-hover"
+              : "cursor-not-allowed bg-camp-surface text-camp-text-muted"
+          }`}
+        >
+          {setupDone ? "리더보드로 이동" : "터미널에서 설정을 완료해주세요"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -58,30 +120,7 @@ export default function OnboardingPage() {
   }
 
   if (completed) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-8">
-        <div className="flex w-full max-w-2xl flex-col items-center gap-8">
-          <h1 className="text-2xl font-bold text-camp-text">
-            설정을 완료하세요
-          </h1>
-          <p className="text-center text-sm text-camp-text-secondary">
-            아래 명령어를 터미널에 붙여넣기하면 사용량 추적이 시작됩니다.
-          </p>
-
-          <div className="w-full">
-            <SetupGuide />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="w-full max-w-xs cursor-pointer rounded-xl bg-camp-accent px-6 py-3 text-sm font-semibold text-black transition-all hover:bg-camp-accent-hover"
-          >
-            리더보드로 이동
-          </button>
-        </div>
-      </div>
-    );
+    return <SetupStep onComplete={() => router.push("/")} />;
   }
 
   return (
