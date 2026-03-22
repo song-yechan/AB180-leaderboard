@@ -1,30 +1,26 @@
 "use client";
 
-import SplitText from "@/components/reactbits/SplitText";
+import DecryptedText from "@/components/reactbits/DecryptedText";
 
 export default function HeroTitle() {
   return (
     <h1 className="text-3xl font-bold leading-[1.15] tracking-tight text-camp-text sm:text-4xl lg:text-5xl">
-      <SplitText
+      <DecryptedText
         text="더 많이 쓰는 사람이"
+        speed={40}
+        animateOn="view"
+        sequential
+        revealDirection="start"
         className="text-camp-text"
-        delay={40}
-        duration={0.5}
-        splitType="chars"
-        from={{ opacity: 0, y: 40 }}
-        to={{ opacity: 1, y: 0 }}
-        textAlign="left"
       />
       <br />
-      <SplitText
+      <DecryptedText
         text="더 빠르게 성장합니다"
+        speed={40}
+        animateOn="view"
+        sequential
+        revealDirection="start"
         className="text-camp-accent"
-        delay={40}
-        duration={0.5}
-        splitType="chars"
-        from={{ opacity: 0, y: 40 }}
-        to={{ opacity: 1, y: 0 }}
-        textAlign="left"
       />
     </h1>
   );
