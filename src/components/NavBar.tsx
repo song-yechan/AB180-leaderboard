@@ -24,6 +24,7 @@ export default function NavBar() {
   const [checked, setChecked] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [setupTooltipOpen, setSetupTooltipOpen] = useState(false);
+  const [mobileSetupOpen, setMobileSetupOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/me")
@@ -163,6 +164,33 @@ export default function NavBar() {
           </div>
         </div>
       )}
+
+      {/* Mobile setup banner */}
+      {needsSetup && (
+        <div className="border-b border-amber-500/20 bg-amber-500/10 md:hidden">
+          <div className="flex items-center justify-between px-4 py-2">
+            <p className="text-xs text-amber-200">
+              CLI 설정이 필요합니다.
+            </p>
+            <button
+              type="button"
+              onClick={() => setMobileSetupOpen(true)}
+              className="cursor-pointer rounded-md bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-200 transition-colors hover:bg-amber-500/30"
+            >
+              설정 방법
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile SetupTooltip (rendered separately since desktop nav is hidden on mobile) */}
+      <div className="fixed top-2 right-4 z-[60] md:hidden">
+        <SetupTooltip
+          needsSetup={needsSetup}
+          forceOpen={mobileSetupOpen}
+          onOpenChange={setMobileSetupOpen}
+        />
+      </div>
 
       {/* Mobile bottom tab bar */}
       <nav className="fixed right-0 bottom-0 left-0 z-50 border-t border-camp-border bg-camp-bg/80 backdrop-blur-xl md:hidden">

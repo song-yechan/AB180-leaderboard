@@ -1,7 +1,36 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import DayCard from "@/components/DayCard";
 import { DAYS } from "@/lib/course-data";
 
+interface ProgressEntry {
+  day: number;
+  block: string;
+  completed_at: string;
+}
+
 export default function CoursePage() {
+  const [completedByDay, setCompletedByDay] = useState<Record<number, number>>(
+    {},
+  );
+
+  useEffect(() => {
+    fetch("/api/progress")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data?.progress) return;
+        const counts: Record<number, number> = {};
+        for (const entry of data.progress as ProgressEntry[]) {
+          counts[entry.day] = (counts[entry.day] ?? 0) + 1;
+        }
+        setCompletedByDay(counts);
+      })
+      .catch(() => {
+        /* not logged in or network error — show 0 progress */
+      });
+  }, []);
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-12 pb-20 md:pb-12">
       {/* Skill Download Section */}
@@ -92,7 +121,7 @@ export default function CoursePage() {
               description={day.description}
               href={day.href}
               totalBlocks={day.blocks.length}
-              completedBlocks={0}
+              completedBlocks={completedByDay[day.day] ?? 0}
             />
           </div>
         ))}
