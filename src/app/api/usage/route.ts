@@ -32,9 +32,6 @@ export async function GET(request: NextRequest) {
       usersQuery = usersQuery.not("cohort", "is", null);
     }
 
-    const { data: users, error: usersError } = await usersQuery;
-    if (usersError) throw usersError;
-
     let logsQuery = supabase
       .from("usage_logs")
       .select("user_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, total_cost, sessions_count");
@@ -43,8 +40,13 @@ export async function GET(request: NextRequest) {
       logsQuery = logsQuery.gte("date", dateFilter);
     }
 
-    const { data: logs, error: logsError } = await logsQuery;
-    if (logsError) throw logsError;
+    // 병렬 실행
+    const [usersResult, logsResult] = await Promise.all([usersQuery, logsQuery]);
+    if (usersResult.error) throw usersResult.error;
+    if (logsResult.error) throw logsResult.error;
+
+    const users = usersResult.data;
+    const logs = logsResult.data;
 
     const userIds = new Set(users?.map((u) => u.id) ?? []);
     const aggregated = new Map<string, { input_tokens: number; output_tokens: number; cache_creation_tokens: number; cache_read_tokens: number; total_cost: number; sessions_count: number }>();
@@ -93,7 +95,9 @@ export async function GET(request: NextRequest) {
         return (b.sessions_count ?? 0) - (a.sessions_count ?? 0);
       });
 
-    return NextResponse.json({ leaderboard });
+    return NextResponse.json({ leaderboard }, {
+      headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=30" },
+    });
   } catch (err) {
     console.error("Failed to fetch leaderboard from Supabase:", err);
     return NextResponse.json({ leaderboard: [] });

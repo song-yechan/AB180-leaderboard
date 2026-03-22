@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, type ReactNode } from "react";
+import { useEffect, useState, useCallback, useRef, memo } from "react";
 import { useRouter } from "next/navigation";
 import CountUp from "./CountUp";
 import CompareModal from "./CompareModal";
-import AnimatedList from "@/components/reactbits/AnimatedList";
+// AnimatedList 제거 — IntersectionObserver N개 + motion remount가 필터 전환을 느리게 만듦
 import CohortBadge from "@/components/ui/CohortBadge";
 import type { LeaderboardEntry } from "@/lib/types";
 import { getCategoryById, getCategoriesByGroup } from "@/lib/job-categories";
@@ -64,7 +64,7 @@ function filterByDepartment(entries: LeaderboardEntry[], dept: string): Leaderbo
   return entries.filter((e) => e.department === dept);
 }
 
-function LeaderboardRow({
+const LeaderboardRow = memo(function LeaderboardRow({
   entry,
   rank,
   isCompareSelected,
@@ -156,7 +156,7 @@ function LeaderboardRow({
       </span>
     </div>
   );
-}
+});
 
 export default function Leaderboard() {
   const router = useRouter();
@@ -165,7 +165,6 @@ export default function Leaderboard() {
   const [period, setPeriod] = useState<Period>("all");
   const [rawData, setRawData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [animationKey, setAnimationKey] = useState(0);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
@@ -206,7 +205,6 @@ export default function Leaderboard() {
       setRawData([]);
     } finally {
       setLoading(false);
-      setAnimationKey((prev) => prev + 1);
     }
   }, [period, apiCategory]);
 
@@ -263,22 +261,21 @@ export default function Leaderboard() {
   const podium = data.slice(0, 3);
   const rest = data.slice(3);
 
-  function handleToggleCompare(userId: string) {
+  const handleToggleCompare = useCallback((userId: string) => {
     setCompareIds((prev) => {
       if (prev.includes(userId)) {
         return prev.filter((id) => id !== userId);
       }
       if (prev.length >= 2) {
-        // Replace the first selected
         return [prev[1], userId];
       }
       return [...prev, userId];
     });
-  }
+  }, []);
 
-  function handleNavigate(userId: string) {
+  const handleNavigate = useCallback((userId: string) => {
     router.push(`/user/${userId}`);
-  }
+  }, [router]);
 
   function handleCompare() {
     if (compareIds.length === 2) {
@@ -305,19 +302,6 @@ export default function Leaderboard() {
 
   // 개발자 탭에서만 커밋/PR 표시, 나머지는 세션
   const showDevMetrics = category === "dev";
-
-  const listItems: ReactNode[] = rest.map((entry, index) => (
-    <LeaderboardRow
-      key={entry.user_id}
-      entry={entry}
-      rank={index + 4}
-      isCompareSelected={compareIds.includes(entry.user_id)}
-      onToggleCompare={handleToggleCompare}
-      onNavigate={handleNavigate}
-      showCohort={showCohort}
-      showDevMetrics={showDevMetrics}
-    />
-  ));
 
   return (
     <div className="flex flex-col gap-8">
@@ -374,7 +358,6 @@ export default function Leaderboard() {
       {!loading && podium.length > 0 && (
         <div
           className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-end"
-          key={`podium-${animationKey}`}
         >
           {podium.map((entry, index) => (
             <PodiumCard
@@ -394,9 +377,9 @@ export default function Leaderboard() {
         </div>
       )}
 
-      {/* List (4th and below) with AnimatedList */}
+      {/* List (4th and below) */}
       {!loading && rest.length > 0 && (
-        <div key={`rows-${animationKey}`}>
+        <div>
           {/* List header */}
           <div className="flex items-center px-4 py-2 text-[10px] font-medium uppercase tracking-[0.15em] text-camp-text-secondary">
             <span className="mr-2 w-3.5" />
@@ -406,11 +389,20 @@ export default function Leaderboard() {
             <span className="hidden w-24 text-right sm:block">{showDevMetrics ? "커밋 / PR" : "세션"}</span>
           </div>
 
-          <AnimatedList
-            items={listItems}
-            showGradients={false}
-            enableArrowNavigation={false}
-          />
+          <div className="space-y-1.5">
+            {rest.map((entry, index) => (
+              <LeaderboardRow
+                key={entry.user_id}
+                entry={entry}
+                rank={index + 4}
+                isCompareSelected={compareIds.includes(entry.user_id)}
+                onToggleCompare={handleToggleCompare}
+                onNavigate={handleNavigate}
+                showCohort={showCohort}
+                showDevMetrics={showDevMetrics}
+              />
+            ))}
+          </div>
         </div>
       )}
 
