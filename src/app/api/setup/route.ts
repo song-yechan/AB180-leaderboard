@@ -80,16 +80,31 @@ const idx = s.hooks.Stop.findIndex(function(h) {
     return hh.command && hh.command.includes('ai-camp/report-usage');
   });
 });
-const entry = { matcher: '.*', hooks: [{ type: 'command', command: 'node ' + hookPath }] };
+var stopEntry = { matcher: '.*', hooks: [{ type: 'command', command: 'node ' + hookPath }] };
 if (idx >= 0) {
-  s.hooks.Stop[idx] = entry;
+  s.hooks.Stop[idx] = stopEntry;
 } else {
-  s.hooks.Stop.push(entry);
+  s.hooks.Stop.push(stopEntry);
 }
+
+// SessionStart hook (큐 drain + self-update)
+if (!s.hooks.SessionStart) s.hooks.SessionStart = [];
+var ssIdx = s.hooks.SessionStart.findIndex(function(h) {
+  return h.hooks && h.hooks.some(function(hh) {
+    return hh.command && hh.command.includes('ai-camp/report-usage');
+  });
+});
+var ssEntry = { matcher: '.*', hooks: [{ type: 'command', command: 'node ' + hookPath, timeout: 5 }] };
+if (ssIdx >= 0) {
+  s.hooks.SessionStart[ssIdx] = ssEntry;
+} else {
+  s.hooks.SessionStart.push(ssEntry);
+}
+
 fs.writeFileSync(f, JSON.stringify(s, null, 2) + '\\n');
 "
 
-echo "  [4/5] Claude Stop hook registered"
+echo "  [4/5] Claude hooks registered (Stop + SessionStart)"
 
 # --------------------------------------------------
 # 5. Call onboard API

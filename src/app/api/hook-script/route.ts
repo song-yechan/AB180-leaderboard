@@ -141,17 +141,35 @@ function selfUpdate(apiUrl) {
           const settingsPath = path.join(os.homedir(), ".claude", "settings.json");
           if (fs.existsSync(settingsPath)) {
             const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
-            if (settings.hooks && settings.hooks.Stop) {
-              let fixed = false;
+            let changed = false;
+            if (!settings.hooks) settings.hooks = {};
+
+            // Stop hook 정비
+            if (settings.hooks.Stop) {
               for (const entry of settings.hooks.Stop) {
                 const isAiCamp = entry.hooks && entry.hooks.some((h) => h.command && h.command.includes("ai-camp/report-usage"));
                 if (isAiCamp && entry.matcher !== ".*") {
                   entry.matcher = ".*";
-                  fixed = true;
+                  changed = true;
                 }
               }
-              if (fixed) fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
             }
+
+            // SessionStart hook 자동 등록 (큐 drain용)
+            if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+            const hookPath = path.join(os.homedir(), ".config", "ai-camp", "report-usage.js");
+            const hasSessionStart = settings.hooks.SessionStart.some((entry) =>
+              entry.hooks && entry.hooks.some((h) => h.command && h.command.includes("ai-camp/report-usage"))
+            );
+            if (!hasSessionStart) {
+              settings.hooks.SessionStart.push({
+                matcher: ".*",
+                hooks: [{ type: "command", command: "node " + hookPath, timeout: 5 }]
+              });
+              changed = true;
+            }
+
+            if (changed) fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
           }
           fs.writeFileSync(lastUpdateFile, today);
         } catch {}
@@ -167,13 +185,30 @@ process.stdin.on("data", (d) => (input += d));
 process.stdin.on("end", () => {
   try {
     const event = JSON.parse(input);
+    const configDir = path.join(os.homedir(), ".config", "ai-camp");
+
+    // 토큰/URL이 없으면 setup 미완료 — 종료
+    const tokenPath = path.join(configDir, "token");
+    const urlPath = path.join(configDir, "api_url");
+    if (!fs.existsSync(tokenPath) || !fs.existsSync(urlPath)) process.exit(0);
+
+    const token = fs.readFileSync(tokenPath, "utf8").trim();
+    const apiUrl = fs.readFileSync(urlPath, "utf8").trim();
+
+    // SessionStart: 큐 drain + self-update만 수행하고 종료
+    const hookEvent = event.hook_event_name || "";
+    if (hookEvent === "SessionStart") {
+      selfUpdate(apiUrl);
+      drainQueue(apiUrl, token, 20);
+      // 5초 후 자동 종료 (drain 비동기 완료 대기)
+      setTimeout(() => process.exit(0), 4000);
+      return;
+    }
+
+    // 이하 Stop hook 로직
     const transcriptPath = event.transcript_path;
     const sessionId = event.session_id;
     if (!transcriptPath || !fs.existsSync(transcriptPath)) process.exit(0);
-
-    const configDir = path.join(os.homedir(), ".config", "ai-camp");
-    const token = fs.readFileSync(path.join(configDir, "token"), "utf8").trim();
-    const apiUrl = fs.readFileSync(path.join(configDir, "api_url"), "utf8").trim();
 
     // Trigger self-update (async, non-blocking)
     selfUpdate(apiUrl);
