@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { department } = body as { department?: string };
+  const { department, name } = body as { department?: string; name?: string };
 
   if (!department) {
     return NextResponse.json(
@@ -34,13 +34,19 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createServiceSupabase();
 
+  const updateData: Record<string, unknown> = {
+    role,
+    department,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (name && name.trim()) {
+    updateData.name = name.trim();
+  }
+
   const { error } = await supabase
     .from("users")
-    .update({
-      role,
-      department,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq("id", userId);
 
   if (error) {

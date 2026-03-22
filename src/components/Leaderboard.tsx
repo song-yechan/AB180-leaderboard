@@ -84,7 +84,7 @@ function LeaderboardRow({
 
   return (
     <div
-      className="glass-hover group flex cursor-pointer items-center rounded-xl px-4 py-3 transition-all duration-200"
+      className="glass-hover group relative flex cursor-pointer items-center overflow-hidden rounded-xl px-4 py-3 transition-all duration-200"
       onClick={() => onNavigate(entry.user_id)}
       role="button"
       tabIndex={0}
@@ -92,6 +92,9 @@ function LeaderboardRow({
         if (e.key === "Enter") onNavigate(entry.user_id);
       }}
     >
+      {/* Left accent bar */}
+      <span className="absolute left-0 top-0 h-full w-0.5 bg-camp-accent opacity-0 transition-opacity group-hover:opacity-100" />
+
       {/* Compare checkbox */}
       <label
         className="mr-2 flex items-center"
@@ -344,7 +347,7 @@ export default function Leaderboard() {
       {/* Empty state */}
       {!loading && data.length === 0 && (
         <div className="glass flex flex-col items-center justify-center gap-5 rounded-2xl px-6 py-24">
-          <span className="text-4xl">--</span>
+          <img src="/levels/Lv.01.png" alt="잉어킹" width={64} height={64} className="size-16" style={{ imageRendering: "pixelated" }} />
           <div className="flex flex-col items-center gap-2">
             <span className="text-lg font-semibold text-camp-text">
               아직 데이터가 없습니다

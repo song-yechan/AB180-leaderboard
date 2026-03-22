@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   JOB_CATEGORIES,
@@ -18,6 +18,19 @@ export default function OnboardingPage() {
   const [selected, setSelected] = useState<JobCategoryId | null>(null);
   const [completed, setCompleted] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [googleName, setGoogleName] = useState("");
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((me) => {
+        if (me?.name) {
+          setGoogleName(me.name);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit() {
     if (!selected) {
@@ -30,7 +43,10 @@ export default function OnboardingPage() {
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ department: selected }),
+        body: JSON.stringify({
+          department: selected,
+          ...(displayName.trim() ? { name: displayName.trim() } : {}),
+        }),
       });
 
       if (res.ok) {
@@ -79,6 +95,25 @@ export default function OnboardingPage() {
           <br />
           나중에 변경할 수 있습니다.
         </p>
+
+        {/* Display name */}
+        <div className="flex w-full flex-col gap-2">
+          <label htmlFor="display-name" className="text-xs font-medium uppercase tracking-wider text-camp-text-secondary">
+            표시 이름
+          </label>
+          <input
+            id="display-name"
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder={googleName || "이름을 입력해주세요"}
+            disabled={loading}
+            className="glass w-full rounded-xl border border-camp-border bg-camp-surface px-4 py-3 text-sm text-camp-text placeholder:text-camp-text-muted focus:border-camp-accent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <span className="text-[10px] text-camp-text-muted">
+            비워두면 Google 계정 이름이 사용됩니다.
+          </span>
+        </div>
 
         {/* Developer group */}
         <div className="flex w-full flex-col gap-3">

@@ -95,8 +95,47 @@ export async function checkAndAwardBadges(
   if (todaySessions >= 10) earned.push("speed_demon");
 
   // hello_world, setup_done, skill_maker, early_bird, night_owl,
-  // weekend_warrior, multi_model, top_3, top_10, first_compare,
-  // camp_graduate, camp_day1 → 별도 트리거에서 지급 (자동 감지 불가)
+  // weekend_warrior, multi_model, top_3, top_10, first_compare → 별도 트리거에서 지급
+
+  // ── 캠프 수료 배지 ──
+  // 각 Day의 블록 ID (course-data.ts의 실제 ID 기반)
+  const DAY_BLOCKS: Record<number, string[]> = {
+    1: ["d1-setup", "d1-concepts", "d1-experience", "d1-7features", "d1-cli-git"],
+    2: ["d2-context", "d2-philosophy", "d2-mcp-deep", "d2-mcp-practice", "d2-context-sync"],
+    3: ["d3-principle", "d3-clarify", "d3-skill1", "d3-skill2", "d3-chaining", "d3-agent"],
+    4: ["d4-context-eng", "d4-compound-eng", "d4-github", "d4-service", "d4-compound-practice"],
+  };
+
+  try {
+    const { data: progress } = await supabase
+      .from("progress")
+      .select("day, block")
+      .eq("user_id", userId);
+
+    if (progress && progress.length > 0) {
+      const completedSet = new Set(
+        progress.map((p: { day: number; block: string }) => `${p.day}:${p.block}`)
+      );
+
+      const isDayComplete = (day: number): boolean => {
+        const blocks = DAY_BLOCKS[day];
+        if (!blocks) return false;
+        return blocks.every((block) => completedSet.has(`${day}:${block}`));
+      };
+
+      // Day 1 완료 → camp_day1
+      if (isDayComplete(1)) {
+        earned.push("camp_day1");
+      }
+
+      // Day 1~4 전체 완료 → camp_graduate
+      if ([1, 2, 3, 4].every(isDayComplete)) {
+        earned.push("camp_graduate");
+      }
+    }
+  } catch {
+    // progress 테이블 조회 실패 시 graceful하게 무시
+  }
 
   // 배지 upsert
   if (earned.length > 0) {

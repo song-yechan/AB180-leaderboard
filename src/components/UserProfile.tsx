@@ -34,24 +34,36 @@ function TotalTokens({ user }: { user: UserProfileProps["user"] }) {
       <div className="mb-3 font-mono text-2xl font-bold tabular-nums text-camp-text">
         {formatNumber(total)}
       </div>
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2">
-          <span className="text-camp-text-secondary">Input</span>
-          <span className="font-mono tabular-nums text-camp-text">{formatNumber(input)}</span>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2.5">
+          <span className="font-medium text-camp-text-secondary">Input</span>
+          <span className="font-mono font-semibold tabular-nums text-camp-text">{formatNumber(input)}</span>
         </div>
-        <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2">
-          <span className="text-camp-text-secondary">Output</span>
-          <span className="font-mono tabular-nums text-camp-text">{formatNumber(output)}</span>
+        <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2.5">
+          <span className="font-medium text-camp-text-secondary">Output</span>
+          <span className="font-mono font-semibold tabular-nums text-camp-text">{formatNumber(output)}</span>
         </div>
-        <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2">
-          <span className="text-camp-text-secondary">Cache Read</span>
-          <span className="font-mono tabular-nums text-camp-text">{formatNumber(cacheRead)}</span>
+        <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2.5">
+          <span className="font-medium text-camp-text-secondary">Cache Read</span>
+          <span className="font-mono font-semibold tabular-nums text-camp-text">{formatNumber(cacheRead)}</span>
         </div>
-        <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2">
-          <span className="text-camp-text-secondary">Cache Create</span>
-          <span className="font-mono tabular-nums text-camp-text">{formatNumber(cacheCreation)}</span>
+        <div className="flex justify-between rounded-lg bg-camp-surface px-3 py-2.5">
+          <span className="font-medium text-camp-text-secondary">Cache Create</span>
+          <span className="font-mono font-semibold tabular-nums text-camp-text">{formatNumber(cacheCreation)}</span>
         </div>
       </div>
+      <details className="mt-4">
+        <summary className="cursor-pointer text-xs text-camp-text-muted hover:text-camp-text-secondary">
+          산출 기준 안내
+        </summary>
+        <div className="mt-2 rounded-lg bg-camp-surface p-3 text-xs text-camp-text-muted space-y-2">
+          <p><strong className="text-camp-text-secondary">비용</strong>: 모델별 토큰 단가로 계산 (Opus $15/$75, Sonnet $3/$15, Haiku $0.80/$4 per 1M tokens)</p>
+          <p><strong className="text-camp-text-secondary">세션</strong>: Claude Code 종료 시마다 1회 카운트</p>
+          <p><strong className="text-camp-text-secondary">커밋</strong>: 당일 git log 기준 실제 커밋 수</p>
+          <p><strong className="text-camp-text-secondary">XP</strong>: 총 토큰 × 배율 (개발자 0.7x, 비개발자 1.0x)</p>
+          <p><strong className="text-camp-text-secondary">스트릭</strong>: 연속 사용 일수 (1일이라도 빠지면 리셋)</p>
+        </div>
+      </details>
     </div>
   );
 }
@@ -85,8 +97,8 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
             />
           </div>
           {level.next ? (
-            <span className="text-[10px] text-camp-text-muted">
-              다음: ??? — {formatNumber(level.next.requiredXP - xp)} 토큰 더 필요
+            <span className="text-xs text-camp-text-secondary">
+              다음: <span className="font-semibold text-camp-text">{level.next.name}</span> — {formatNumber(level.next.requiredXP - xp)} 토큰 더 필요
             </span>
           ) : (
             <span className="text-[10px] text-camp-accent">MAX LEVEL</span>
@@ -176,11 +188,11 @@ export default function UserProfile({ user }: UserProfileProps) {
             key={stat.key}
             className="glass glass-hover flex flex-col items-center gap-1.5 rounded-xl px-4 py-4 transition-all duration-200"
           >
-            <span className="text-lg">{stat.icon}</span>
-            <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-camp-text-muted">
+            <span className="text-xl">{stat.icon}</span>
+            <span className="text-xs font-medium text-camp-text-secondary">
               {stat.label}
             </span>
-            <span className="font-mono text-lg font-bold tabular-nums text-camp-text">
+            <span className="font-mono text-2xl font-bold tabular-nums text-camp-text">
               <CountUp
                 end={stat.getValue(user)}
                 prefix={stat.prefix}
