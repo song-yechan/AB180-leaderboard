@@ -192,66 +192,41 @@ process.stdin.on("end", () => {
     const modelsSet = new Set();
 
     // 2-pass: 먼저 tool_use ID → 명령어 매핑, 그 다음 tool_result로 성공 여부 확인
-    const commitToolIds = new Set();
-    const prToolIds = new Set();
-    const toolResults = new Map(); // tool_use_id → success boolean
-
     for (const line of lines) {
       try {
         const entry = JSON.parse(line);
-
-        if (entry.type === "assistant") {
-          const usage = entry.message && entry.message.usage;
-          const model = entry.message && entry.message.model;
-          if (usage) {
-            const inp = usage.input_tokens || 0;
-            const out = usage.output_tokens || 0;
-            const cw = usage.cache_creation_input_tokens || 0;
-            const cr = usage.cache_read_input_tokens || 0;
-            totalInput += inp;
-            totalOutput += out;
-            totalCacheCreate += cw;
-            totalCacheRead += cr;
-            const p = getPrice(model);
-            totalCost += (inp * p.input + out * p.output + cw * p.cache_write + cr * p.cache_read) / 1000000;
-          }
-          if (model) modelsSet.add(model);
-
-          const content = entry.message && entry.message.content;
-          if (Array.isArray(content)) {
-            for (const block of content) {
-              if (block.type === "tool_use" && block.name === "Bash" && block.id) {
-                const cmd = (block.input && block.input.command) || "";
-                if (/git\\s+commit/i.test(cmd)) commitToolIds.add(block.id);
-                if (/gh\\s+pr\\s+create/i.test(cmd)) prToolIds.add(block.id);
-              }
-            }
-          }
+        if (entry.type !== "assistant") continue;
+        const usage = entry.message && entry.message.usage;
+        const model = entry.message && entry.message.model;
+        if (usage) {
+          const inp = usage.input_tokens || 0;
+          const out = usage.output_tokens || 0;
+          const cw = usage.cache_creation_input_tokens || 0;
+          const cr = usage.cache_read_input_tokens || 0;
+          totalInput += inp;
+          totalOutput += out;
+          totalCacheCreate += cw;
+          totalCacheRead += cr;
+          const p = getPrice(model);
+          totalCost += (inp * p.input + out * p.output + cw * p.cache_write + cr * p.cache_read) / 1000000;
         }
-
-        // tool_result: exit code 0 = 성공
-        if (entry.type === "tool" && entry.message && entry.message.content) {
-          const tc = entry.message.content;
-          if (Array.isArray(tc)) {
-            for (const block of tc) {
-              if (block.tool_use_id) {
-                // exit code 0이면 성공 (에러 없음 = 성공)
-                const isError = block.is_error === true;
-                toolResults.set(block.tool_use_id, !isError);
-              }
-            }
-          }
-        }
+        if (model) modelsSet.add(model);
       } catch {}
     }
 
-    // 성공한 tool_use만 카운트
-    for (const id of commitToolIds) {
-      if (toolResults.get(id) !== false) commits++;
-    }
-    for (const id of prToolIds) {
-      if (toolResults.get(id) !== false) pullRequests++;
-    }
+    // 커밋/PR: JSONL 파싱 대신 cwd에서 git log로 오늘의 실제 수 가져오기
+    const { execSync } = require("child_process");
+    try {
+      const cwd = event.cwd || process.cwd();
+      const todayForGit = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+      const gitCommits = execSync("git log --oneline --since='" + todayForGit + "' 2>/dev/null | wc -l", { cwd, timeout: 3000 }).toString().trim();
+      commits = parseInt(gitCommits, 10) || 0;
+    } catch { commits = 0; }
+    try {
+      const cwd = event.cwd || process.cwd();
+      const gitPRs = execSync("git log --oneline --all --grep='Merge pull request' --since='1 week ago' 2>/dev/null | wc -l", { cwd, timeout: 3000 }).toString().trim();
+      pullRequests = parseInt(gitPRs, 10) || 0;
+    } catch { pullRequests = 0; }
 
     const totalTokens = totalInput + totalOutput + totalCacheCreate + totalCacheRead;
     if (totalTokens === 0) process.exit(0);
@@ -267,10 +242,7 @@ process.stdin.on("end", () => {
     const deltaCost = Math.max(0, totalCost - prev.cost);
     const deltaTotal = deltaInput + deltaOutput + deltaCacheCreate + deltaCacheRead;
 
-    const deltaCommits = Math.max(0, commits - (prev.commits || 0));
-    const deltaPRs = Math.max(0, pullRequests - (prev.prs || 0));
-
-    if (deltaTotal <= 0 && deltaCommits <= 0 && deltaPRs <= 0) process.exit(0);
+    if (deltaTotal <= 0) process.exit(0);
 
     // 캐시 업데이트 (제출 전에 저장 — 실패 시 큐에서 재시도)
     if (sessionId) {
@@ -291,8 +263,8 @@ process.stdin.on("end", () => {
       cache_read_tokens: deltaCacheRead,
       total_tokens: deltaTotal,
       total_cost: Math.round(deltaCost * 100) / 100,
-      commits: deltaCommits,
-      pull_requests: deltaPRs,
+      commits: commits,
+      pull_requests: pullRequests,
       models_used: Array.from(modelsSet),
     });
 

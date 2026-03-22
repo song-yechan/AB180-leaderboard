@@ -122,7 +122,7 @@ describe("POST /api/usage/submit", () => {
       input_tokens: 800,
       output_tokens: 300,
       sessions_count: 2,
-      commits: 2,
+      commits: 1,
       pull_requests: 1,
     }));
   });

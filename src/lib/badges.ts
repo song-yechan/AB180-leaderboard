@@ -8,7 +8,6 @@ export async function checkAndAwardBadges(
   supabase: SupabaseClient,
   userId: string
 ) {
-  // 1. 유저의 전체 usage_logs 집계
   const { data: logs } = await supabase
     .from("usage_logs")
     .select("date, total_cost, sessions_count, commits, pull_requests")
@@ -27,9 +26,8 @@ export async function checkAndAwardBadges(
     { cost: 0, sessions: 0, commits: 0, prs: 0 }
   );
 
-  // 2. streak 계산
+  // Streak 계산
   const dates = logs.map((d) => d.date).sort();
-  const dateSet = new Set(dates);
   let maxStreak = 0;
   let currentStreak = 0;
 
@@ -49,36 +47,58 @@ export async function checkAndAwardBadges(
     }
   }
 
-  // 3. 조건 판별
+  // 오늘의 최신 로그 (시간대 + 단일 세션 분석용)
+  const todayLog = logs[logs.length - 1];
+  const todaySessions = todayLog?.sessions_count ?? 0;
+  const todayCost = Number(todayLog?.total_cost ?? 0);
+
   const earned: string[] = [];
 
-  // first_step: 첫 세션 (sessions >= 1)
+  // ── 시작 ──
   if (totals.sessions >= 1) earned.push("first_step");
 
-  // ten_dollar: 누적 $10+
-  if (totals.cost >= 10) earned.push("ten_dollar");
-
-  // hundred_dollar: 누적 $100+
-  if (totals.cost >= 100) earned.push("hundred_dollar");
-
-  // week_warrior: 7일 연속
-  if (maxStreak >= 7) earned.push("week_warrior");
-
-  // month_master: 30일 연속
-  if (maxStreak >= 30) earned.push("month_master");
-
-  // code_pusher: 첫 커밋
-  if (totals.commits >= 1) earned.push("code_pusher");
-
-  // pr_hero: 첫 PR
-  if (totals.prs >= 1) earned.push("pr_hero");
-
-  // century: 100세션
+  // ── 세션 ──
+  if (totals.sessions >= 10) earned.push("session_10");
+  if (totals.sessions >= 50) earned.push("session_50");
   if (totals.sessions >= 100) earned.push("century");
+  if (totals.sessions >= 500) earned.push("session_500");
+  if (totals.sessions >= 1000) earned.push("session_1000");
 
-  // skill_maker는 자동 감지 불가 (수동 지급 또는 별도 로직)
+  // ── 비용 ──
+  if (totals.cost >= 1) earned.push("one_dollar");
+  if (totals.cost >= 10) earned.push("ten_dollar");
+  if (totals.cost >= 50) earned.push("fifty_dollar");
+  if (totals.cost >= 100) earned.push("hundred_dollar");
+  if (totals.cost >= 500) earned.push("five_hundred_dollar");
+  if (totals.cost >= 1000) earned.push("thousand_dollar");
 
-  // 4. 배지 upsert (이미 있는 건 무시)
+  // ── 스트릭 ──
+  if (maxStreak >= 3) earned.push("streak_3");
+  if (maxStreak >= 7) earned.push("week_warrior");
+  if (maxStreak >= 14) earned.push("streak_14");
+  if (maxStreak >= 21) earned.push("streak_21");
+  if (maxStreak >= 30) earned.push("month_master");
+  if (maxStreak >= 60) earned.push("streak_60");
+  if (maxStreak >= 90) earned.push("streak_90");
+
+  // ── 코드 ──
+  if (totals.commits >= 1) earned.push("code_pusher");
+  if (totals.commits >= 10) earned.push("commit_10");
+  if (totals.commits >= 50) earned.push("commit_50");
+  if (totals.commits >= 100) earned.push("commit_100");
+  if (totals.prs >= 1) earned.push("pr_hero");
+  if (totals.prs >= 10) earned.push("pr_10");
+
+  // ── 특별 ──
+  if (todayCost >= 5) earned.push("big_session");
+  if (todayCost >= 20) earned.push("mega_session");
+  if (todaySessions >= 10) earned.push("speed_demon");
+
+  // hello_world, setup_done, skill_maker, early_bird, night_owl,
+  // weekend_warrior, multi_model, top_3, top_10, first_compare,
+  // camp_graduate, camp_day1 → 별도 트리거에서 지급 (자동 감지 불가)
+
+  // 배지 upsert
   if (earned.length > 0) {
     const rows = earned.map((type) => ({
       user_id: userId,
@@ -90,7 +110,7 @@ export async function checkAndAwardBadges(
       .upsert(rows, { onConflict: "user_id,badge_type", ignoreDuplicates: true });
   }
 
-  // 5. max_streak 업데이트
+  // max_streak 업데이트
   await supabase
     .from("users")
     .update({ max_streak: maxStreak })

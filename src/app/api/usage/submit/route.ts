@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
           cache_creation_tokens: (existing.cache_creation_tokens ?? 0) + cacheCreationTokens,
           cache_read_tokens: (existing.cache_read_tokens ?? 0) + cacheReadTokens,
           total_cost: Number(existing.total_cost ?? 0) + totalCost,
-          commits: (existing.commits ?? 0) + commits,
-          pull_requests: (existing.pull_requests ?? 0) + pullRequests,
+          commits: Math.max(existing.commits ?? 0, commits),
+          pull_requests: Math.max(existing.pull_requests ?? 0, pullRequests),
           sessions_count: (existing.sessions_count ?? 0) + 1,
           synced_at: new Date().toISOString(),
         })
