@@ -141,11 +141,20 @@ const DotGrid: React.FC<DotGridProps> = ({
           dot.vy = 0;
         }
 
-        const ox = dot.cx + dot.xOffset;
-        const oy = dot.cy + dot.yOffset;
+        // 근접 반응: 마우스에서 밀려남
         const dx = dot.cx - px;
         const dy = dot.cy - py;
         const dsq = dx * dx + dy * dy;
+
+        if (dsq <= proxSq && dsq > 0) {
+          const dist = Math.sqrt(dsq);
+          const force = (1 - dist / proximity) * 0.4;
+          dot.vx += (dx / dist) * force;
+          dot.vy += (dy / dist) * force;
+        }
+
+        const ox = dot.cx + dot.xOffset;
+        const oy = dot.cy + dot.yOffset;
 
         let fillStyle = baseColor;
         if (dsq <= proxSq) {
@@ -190,26 +199,10 @@ const DotGrid: React.FC<DotGridProps> = ({
       pointerRef.current.y = e.clientY - rect.top;
     };
 
-    const onClick = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
-      for (const dot of dotsRef.current) {
-        const dist = Math.hypot(dot.cx - cx, dot.cy - cy);
-        if (dist < shockRadius) {
-          const falloff = Math.max(0, 1 - dist / shockRadius);
-          dot.vx += (dot.cx - cx) * shockStrength * falloff;
-          dot.vy += (dot.cy - cy) * shockStrength * falloff;
-        }
-      }
-    };
-
     window.addEventListener("mousemove", onMove, { passive: true });
-    window.addEventListener("click", onClick);
 
     return () => {
       window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("click", onClick);
     };
   }, [shockRadius, shockStrength]);
 

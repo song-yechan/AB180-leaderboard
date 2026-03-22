@@ -9,8 +9,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 인증 필요: 온보딩, 관리자 API, 내 정보 API만
+  // 인증 필요: 유저 상세, 온보딩, 관리자 API, 내 정보 API
   const authRequired =
+    pathname.startsWith("/user/") ||
+    pathname.startsWith("/api/user/") ||
     pathname === "/onboarding" ||
     pathname.startsWith("/api/admin") ||
     pathname === "/api/me" ||
