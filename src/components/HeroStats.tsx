@@ -28,7 +28,8 @@ export default function HeroStats() {
         setStats({
           totalParticipants: leaderboard.length,
           totalCost: leaderboard.reduce(
-            (sum: number, e: { total_cost: number }) => sum + e.total_cost,
+            (sum: number, e: { input_tokens?: number; output_tokens?: number; cache_read_tokens?: number; cache_creation_tokens?: number }) =>
+              sum + (e.input_tokens ?? 0) + (e.output_tokens ?? 0) + (e.cache_read_tokens ?? 0) + (e.cache_creation_tokens ?? 0),
             0
           ),
           totalSessions: leaderboard.reduce(
@@ -54,10 +55,10 @@ export default function HeroStats() {
       decimals: 0,
     },
     {
-      label: "총 비용",
+      label: "총 토큰",
       value: stats?.totalCost ?? 0,
       suffix: "",
-      prefix: "$",
+      prefix: "",
       decimals: 0,
     },
     {

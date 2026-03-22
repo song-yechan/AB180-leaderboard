@@ -9,6 +9,7 @@ import CohortBadge from "@/components/ui/CohortBadge";
 import type { LeaderboardEntry } from "@/lib/types";
 import { getCategoryById, getCategoriesByGroup } from "@/lib/job-categories";
 import { calculateTotalTokens, calculateXP, getLevel } from "@/lib/level-system";
+import { formatNumber } from "@/lib/format";
 import LevelUpModal from "./LevelUpModal";
 import PodiumCard from "./leaderboard/PodiumCard";
 import LeaderboardFilters, {
@@ -136,9 +137,9 @@ function LeaderboardRow({
         </div>
       </div>
 
-      {/* Cost */}
+      {/* Tokens */}
       <span className="w-24 text-right font-mono text-sm tabular-nums text-camp-text-secondary">
-        <CountUp end={entry.total_cost} prefix="$" decimals={2} />
+        {formatNumber(calculateTotalTokens(entry))}
       </span>
 
       {/* Sessions or Commits/PR based on tab */}
@@ -401,7 +402,7 @@ export default function Leaderboard() {
             <span className="mr-2 w-3.5" />
             <span className="w-8">#</span>
             <span className="flex-1">이름</span>
-            <span className="w-24 text-right">비용</span>
+            <span className="w-24 text-right">토큰</span>
             <span className="hidden w-24 text-right sm:block">{showDevMetrics ? "커밋 / PR" : "세션"}</span>
           </div>
 

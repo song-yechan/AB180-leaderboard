@@ -165,14 +165,10 @@ export default function PodiumCard({
                 <div className="flex w-full gap-3">
                   <div className="flex flex-1 flex-col items-center gap-0.5 rounded-lg bg-camp-surface px-3 py-2.5">
                     <span className="text-[10px] font-medium uppercase tracking-wider text-camp-text-secondary">
-                      cost
+                      tokens
                     </span>
                     <span className="font-mono text-base font-bold tabular-nums text-camp-text">
-                      <CountUp
-                        end={entry.total_cost}
-                        prefix="$"
-                        decimals={2}
-                      />
+                      {formatNumber(calculateTotalTokens(entry))}
                     </span>
                   </div>
                   <div className="flex flex-1 flex-col items-center gap-0.5 rounded-lg bg-camp-surface px-3 py-2.5">

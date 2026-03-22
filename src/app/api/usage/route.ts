@@ -86,7 +86,12 @@ export async function GET(request: NextRequest) {
           cache_read_tokens: 0, total_cost: 0, sessions_count: 0,
         }),
       }))
-      .sort((a, b) => b.total_cost - a.total_cost);
+      .sort((a, b) => {
+        const tokensA = (a.input_tokens ?? 0) + (a.output_tokens ?? 0) + (a.cache_creation_tokens ?? 0) + (a.cache_read_tokens ?? 0);
+        const tokensB = (b.input_tokens ?? 0) + (b.output_tokens ?? 0) + (b.cache_creation_tokens ?? 0) + (b.cache_read_tokens ?? 0);
+        if (tokensB !== tokensA) return tokensB - tokensA;
+        return (b.sessions_count ?? 0) - (a.sessions_count ?? 0);
+      });
 
     return NextResponse.json({ leaderboard });
   } catch (err) {
