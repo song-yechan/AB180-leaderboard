@@ -330,6 +330,9 @@ process.stdin.on("end", () => {
     const submissionId = sessionId ? (prev.n > 0 ? sessionId + "_r" + prev.n : sessionId) : null;
 
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+    // 새 세션 판별: Stop hook + 첫 전송(resumed 아님)일 때만 true
+    const isNewSession = hookEvent === "Stop" && prev.n === 0;
+
     const data = JSON.stringify({
       session_id: submissionId,
       date: today,
@@ -342,6 +345,7 @@ process.stdin.on("end", () => {
       commits: commits,
       pull_requests: pullRequests,
       models_used: Array.from(modelsSet),
+      is_new_session: isNewSession,
     });
 
     // 먼저 로컬 큐에 저장 (데이터 유실 방지)

@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
   const commits = Number(body.commits ?? 0);
   const pullRequests = Number(body.pull_requests ?? 0);
   const date = body.date as string | undefined;
+  const isNewSession = body.is_new_session === true;
 
   if (!date) {
     return NextResponse.json(
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
         total_cost: totalCost,
         commits,
         pull_requests: pullRequests,
-        sessions_count: 1,
+        sessions_count: isNewSession ? 1 : 0,
         synced_at: new Date().toISOString(),
       });
 
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
           total_cost: Number(existing.total_cost ?? 0) + totalCost,
           commits: Math.max(existing.commits ?? 0, commits),
           pull_requests: Math.max(existing.pull_requests ?? 0, pullRequests),
-          sessions_count: (existing.sessions_count ?? 0) + 1,
+          sessions_count: (existing.sessions_count ?? 0) + (isNewSession ? 1 : 0),
           synced_at: new Date().toISOString(),
         })
         .eq("id", existing.id);
