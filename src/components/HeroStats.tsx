@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import CountUp from "./CountUp";
+import { formatNumber } from "@/lib/format";
 
 interface StatsData {
   totalParticipants: number;
@@ -60,6 +61,7 @@ export default function HeroStats() {
       suffix: "",
       prefix: "",
       decimals: 0,
+      formatted: formatNumber(stats?.totalCost ?? 0),
     },
     {
       label: "총 세션",
@@ -81,13 +83,17 @@ export default function HeroStats() {
             {item.label}
           </span>
           <span className="font-mono text-xl font-bold tabular-nums text-camp-text sm:text-2xl">
-            <CountUp
-              end={item.value}
-              prefix={item.prefix}
-              suffix={item.suffix}
-              decimals={item.decimals}
-              duration={800}
-            />
+            {item.formatted ? (
+              <>{item.formatted}</>
+            ) : (
+              <CountUp
+                end={item.value}
+                prefix={item.prefix}
+                suffix={item.suffix}
+                decimals={item.decimals}
+                duration={800}
+              />
+            )}
           </span>
         </div>
       ))}
