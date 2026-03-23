@@ -290,17 +290,21 @@ process.stdin.on("end", () => {
       } catch {}
     }
 
-    // 커밋/PR: JSONL 파싱 대신 cwd에서 git log로 오늘의 실제 수 가져오기
+    // 커밋/PR: 본인 커밋만 카운트 (git config user.email 기준)
     const { execSync } = require("child_process");
     try {
       const cwd = event.cwd || process.cwd();
       const todayForGit = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
-      const gitCommits = execSync("git log --oneline --since='" + todayForGit + "' 2>/dev/null | wc -l", { cwd, timeout: 3000 }).toString().trim();
+      const gitEmail = execSync("git config user.email 2>/dev/null", { cwd, timeout: 2000 }).toString().trim();
+      const authorFilter = gitEmail ? " --author='" + gitEmail + "'" : "";
+      const gitCommits = execSync("git log --oneline --since='" + todayForGit + "'" + authorFilter + " 2>/dev/null | wc -l", { cwd, timeout: 3000 }).toString().trim();
       commits = parseInt(gitCommits, 10) || 0;
     } catch { commits = 0; }
     try {
       const cwd = event.cwd || process.cwd();
-      const gitPRs = execSync("git log --oneline --all --grep='Merge pull request' --since='1 week ago' 2>/dev/null | wc -l", { cwd, timeout: 3000 }).toString().trim();
+      const gitEmail = execSync("git config user.email 2>/dev/null", { cwd, timeout: 2000 }).toString().trim();
+      const authorFilter = gitEmail ? " --author='" + gitEmail + "'" : "";
+      const gitPRs = execSync("git log --oneline --all --grep='Merge pull request' --since='1 week ago'" + authorFilter + " 2>/dev/null | wc -l", { cwd, timeout: 3000 }).toString().trim();
       pullRequests = parseInt(gitPRs, 10) || 0;
     } catch { pullRequests = 0; }
 
