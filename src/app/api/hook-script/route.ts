@@ -51,6 +51,30 @@ function saveSessionCache(cache) {
   } catch {}
 }
 
+// --- Throttle: PostToolUse 30분 간격 제한 ---
+const THROTTLE_MINUTES = 30;
+
+function getLastReportPath() {
+  return path.join(os.homedir(), ".config", "ai-camp", "last-report.txt");
+}
+
+function shouldThrottle() {
+  try {
+    const lastReportPath = getLastReportPath();
+    if (!fs.existsSync(lastReportPath)) return false;
+    const lastTs = parseInt(fs.readFileSync(lastReportPath, "utf8").trim(), 10);
+    return (Date.now() - lastTs) < THROTTLE_MINUTES * 60 * 1000;
+  } catch { return false; }
+}
+
+function updateLastReport() {
+  try {
+    const configDir = path.join(os.homedir(), ".config", "ai-camp");
+    if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(getLastReportPath(), String(Date.now()));
+  } catch {}
+}
+
 // --- Local Queue: 서버 다운 시 데이터 보존 ---
 function getQueuePath() {
   return path.join(os.homedir(), ".config", "ai-camp", "queue.jsonl");
@@ -169,6 +193,19 @@ function selfUpdate(apiUrl) {
               changed = true;
             }
 
+            // PostToolUse hook 자동 등록 (30분 간격 중간 전송)
+            if (!settings.hooks.PostToolUse) settings.hooks.PostToolUse = [];
+            const hasPostToolUse = settings.hooks.PostToolUse.some((entry) =>
+              entry.hooks && entry.hooks.some((h) => h.command && h.command.includes("ai-camp/report-usage"))
+            );
+            if (!hasPostToolUse) {
+              settings.hooks.PostToolUse.push({
+                matcher: ".*",
+                hooks: [{ type: "command", command: "node " + hookPath, timeout: 5 }]
+              });
+              changed = true;
+            }
+
             if (changed) fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
           }
           fs.writeFileSync(lastUpdateFile, today);
@@ -200,12 +237,16 @@ process.stdin.on("end", () => {
     if (hookEvent === "SessionStart") {
       selfUpdate(apiUrl);
       drainQueue(apiUrl, token, 20);
-      // 5초 후 자동 종료 (drain 비동기 완료 대기)
       setTimeout(() => process.exit(0), 4000);
       return;
     }
 
-    // 이하 Stop hook 로직
+    // PostToolUse: 30분 스로틀 — 미경과 시 즉시 종료
+    if (hookEvent === "PostToolUse") {
+      if (shouldThrottle()) process.exit(0);
+    }
+
+    // 이하 Stop / PostToolUse(스로틀 통과) 공통 로직
     const transcriptPath = event.transcript_path;
     const sessionId = event.session_id;
     if (!transcriptPath || !fs.existsSync(transcriptPath)) process.exit(0);
@@ -309,6 +350,7 @@ process.stdin.on("end", () => {
     // 서버 전송 시도 (3초 timeout)
     httpPost(apiUrl, token, data, 3000, (ok) => {
       if (ok) {
+        updateLastReport();
         // 성공: 방금 넣은 항목을 content 매칭으로 제거
         try {
           const qPath = getQueuePath();
@@ -322,7 +364,6 @@ process.stdin.on("end", () => {
           }
         } catch {}
       }
-      // 실패해도 큐에 남아있으므로 다음 세션에서 재시도
       process.exit(0);
     });
   } catch { process.exit(0); }
