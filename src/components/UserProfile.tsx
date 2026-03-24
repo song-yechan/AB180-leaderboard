@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CohortBadge from "@/components/ui/CohortBadge";
 import CliBadge from "@/components/ui/CliBadge";
 import CountUp from "./CountUp";
@@ -78,6 +78,15 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
   const level = getLevel(xp);
   const [showCollection, setShowCollection] = useState(false);
 
+  useEffect(() => {
+    if (!showCollection) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowCollection(false);
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [showCollection]);
+
   const collectedCount = level.level;
   const totalLevels = LEVELS.length;
 
@@ -97,6 +106,20 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
               {formatNumber(xp)} XP
             </span>
           </div>
+          {/* 도감 버튼 — XP 바 위 */}
+          <button
+            onClick={() => setShowCollection(true)}
+            className="flex cursor-pointer items-center gap-2 rounded-lg border border-camp-accent/30 bg-camp-accent/10 px-3 py-2 transition-all hover:bg-camp-accent/20"
+          >
+            <span className="flex -space-x-1.5">
+              {LEVELS.slice(Math.max(0, level.level - 3), level.level).map((lv) => (
+                <img key={lv.level} src={lv.icon} alt={lv.name} width={20} height={20} className="size-5 rounded-full ring-1 ring-camp-bg" style={{ imageRendering: "pixelated" }} />
+              ))}
+            </span>
+            <span className="text-xs font-semibold text-camp-accent">
+              도감 {collectedCount}/{totalLevels}
+            </span>
+          </button>
           {/* Progress bar */}
           <div className="h-2 w-full overflow-hidden rounded-full bg-camp-surface-hover">
             <div
@@ -111,29 +134,16 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
           ) : (
             <span className="text-[10px] text-camp-accent">MAX LEVEL</span>
           )}
-          <button
-            onClick={() => setShowCollection(true)}
-            className="mt-2 flex cursor-pointer items-center gap-2 rounded-lg border border-camp-accent/30 bg-camp-accent/10 px-3 py-2 transition-all hover:bg-camp-accent/20"
-          >
-            <span className="flex -space-x-1.5">
-              {LEVELS.slice(Math.max(0, level.level - 3), level.level).map((lv) => (
-                <img key={lv.level} src={lv.icon} alt={lv.name} width={20} height={20} className="size-5 rounded-full ring-1 ring-camp-bg" style={{ imageRendering: "pixelated" }} />
-              ))}
-            </span>
-            <span className="text-xs font-semibold text-camp-accent">
-              도감 {collectedCount}/{totalLevels}
-            </span>
-          </button>
         </div>
       </div>
 
       {showCollection && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 backdrop-blur-sm"
           onClick={() => setShowCollection(false)}
         >
           <div
-            className="relative mx-4 my-8 max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-camp-border bg-camp-bg p-8 shadow-2xl"
+            className="relative mx-4 mt-16 mb-8 w-full max-w-3xl rounded-2xl border border-camp-border bg-camp-bg p-8 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6 flex items-center justify-between">
@@ -157,7 +167,7 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
                     className={`flex flex-col items-center gap-1.5 rounded-xl p-3 transition-all ${
                       collected
                         ? "bg-camp-surface ring-1 ring-camp-border"
-                        : "bg-camp-surface/20 opacity-25 grayscale"
+                        : "bg-camp-surface/20"
                     }`}
                   >
                     <img
@@ -165,7 +175,7 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
                       alt={collected ? lv.name : "???"}
                       width={64}
                       height={64}
-                      className="size-16"
+                      className={`size-16 ${collected ? "" : "brightness-0 opacity-40"}`}
                       style={{ imageRendering: "pixelated" }}
                     />
                     <span className={`text-center text-xs font-semibold leading-tight ${collected ? "text-camp-text" : "text-camp-text-muted"}`}>
