@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
   const commits = Number(body.commits ?? 0);
   const pullRequests = Number(body.pull_requests ?? 0);
   const date = body.date as string | undefined;
+  const cliSource = typeof body.cli_source === "string" ? body.cli_source : "claude";
   const isNewSession = body.is_new_session === true;
 
   if (!date) {
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: userId,
         date,
+        cli_source: cliSource,
         input_tokens: inputTokens,
         output_tokens: outputTokens,
         cache_creation_tokens: cacheCreationTokens,
@@ -85,6 +87,7 @@ export async function POST(request: NextRequest) {
         .select("id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, total_cost, sessions_count, commits, pull_requests")
         .eq("user_id", userId)
         .eq("date", date)
+        .eq("cli_source", cliSource)
         .single();
 
       if (fetchError || !existing) {

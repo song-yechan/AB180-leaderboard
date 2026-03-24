@@ -25,7 +25,7 @@ export async function GET(
     // usage_logs에서 일별 사용량 집계 (daily_usage 대신)
     const { data: dailyUsage } = await supabase
       .from("usage_logs")
-      .select("date, total_cost, sessions_count, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, commits, pull_requests")
+      .select("date, total_cost, sessions_count, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, commits, pull_requests, cli_source")
       .eq("user_id", id)
       .order("date", { ascending: true });
 
@@ -72,6 +72,24 @@ export async function GET(
       { total_cost: 0, sessions_count: 0, input_tokens: 0, output_tokens: 0, cache_creation_tokens: 0, cache_read_tokens: 0, commits: 0, pull_requests: 0 }
     );
 
+    // CLI별 사용량 분리
+    const cliBreakdown: Record<string, typeof totals> = {};
+    for (const d of dailyUsage ?? []) {
+      const src = d.cli_source ?? "claude";
+      if (!cliBreakdown[src]) {
+        cliBreakdown[src] = { total_cost: 0, sessions_count: 0, input_tokens: 0, output_tokens: 0, cache_creation_tokens: 0, cache_read_tokens: 0, commits: 0, pull_requests: 0 };
+      }
+      const b = cliBreakdown[src];
+      b.total_cost += Number(d.total_cost ?? 0);
+      b.sessions_count += (d.sessions_count ?? 0);
+      b.input_tokens += (d.input_tokens ?? 0);
+      b.output_tokens += (d.output_tokens ?? 0);
+      b.cache_creation_tokens += (d.cache_creation_tokens ?? 0);
+      b.cache_read_tokens += (d.cache_read_tokens ?? 0);
+      b.commits += (d.commits ?? 0);
+      b.pull_requests += (d.pull_requests ?? 0);
+    }
+
     return NextResponse.json({
       user: {
         user_id: user.id,
@@ -99,6 +117,7 @@ export async function GET(
         all: BADGE_TYPES,
         earned: earnedBadges ?? [],
       },
+      cliBreakdown,
     });
   } catch (err) {
     console.error("Failed to fetch user:", err);

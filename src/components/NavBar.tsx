@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import SetupTooltip from "./SetupTooltip";
+import PolicyPopup from "./PolicyPopup";
 
 interface MeUser {
   id: string;
@@ -25,6 +26,7 @@ export default function NavBar() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [setupTooltipOpen, setSetupTooltipOpen] = useState(false);
   const [mobileSetupOpen, setMobileSetupOpen] = useState(false);
+  const [showPolicy, setShowPolicy] = useState(false);
 
   useEffect(() => {
     fetch("/api/me")
@@ -103,6 +105,29 @@ export default function NavBar() {
               forceOpen={setupTooltipOpen}
               onOpenChange={setSetupTooltipOpen}
             />
+            <button
+              type="button"
+              onClick={() => setShowPolicy(true)}
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-camp-text-secondary transition-colors hover:bg-camp-surface-hover hover:text-camp-text"
+              aria-label="사용량 정책"
+              title="사용량 정책"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </button>
 
             {checked && user ? (
               <div className="ml-2 flex items-center gap-2">
@@ -189,6 +214,9 @@ export default function NavBar() {
           onOpenChange={setMobileSetupOpen}
         />
       </div>
+
+      {/* Policy popup */}
+      {showPolicy && <PolicyPopup onClose={() => setShowPolicy(false)} />}
 
       {/* Mobile bottom tab bar */}
       <nav className="fixed right-0 bottom-0 left-0 z-50 border-t border-camp-border bg-camp-bg/80 backdrop-blur-xl md:hidden">

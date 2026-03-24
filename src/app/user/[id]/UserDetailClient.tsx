@@ -16,6 +16,14 @@ interface Badge {
   description: string;
 }
 
+type CliType = "claude" | "codex" | "both";
+
+const CLI_OPTIONS: { value: CliType; label: string }[] = [
+  { value: "claude", label: "Claude Code" },
+  { value: "codex", label: "Codex" },
+  { value: "both", label: "둘 다" },
+];
+
 export default function UserDetailClient({ userId }: { userId: string }) {
   const [user, setUser] = useState<UserData | null>(null);
   const [dailyUsage, setDailyUsage] = useState<FallbackDailyUsage[]>([]);
@@ -24,16 +32,26 @@ export default function UserDetailClient({ userId }: { userId: string }) {
   const [earnedBadges, setEarnedBadges] = useState<FallbackEarnedBadge[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [cliType, setCliType] = useState<CliType>("claude");
+  const [cliSaving, setCliSaving] = useState(false);
+  const [cliSaved, setCliSaved] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/user/${userId}`);
+        // Fetch user data and current session in parallel
+        const [res, meRes] = await Promise.all([
+          fetch(`/api/user/${userId}`),
+          fetch("/api/me"),
+        ]);
+
         if (res.status === 401) {
           setNeedsLogin(true);
           return;
         }
+
         if (res.ok) {
           const json = await res.json();
           setUser(json.user);
@@ -41,6 +59,15 @@ export default function UserDetailClient({ userId }: { userId: string }) {
           setStreakData(json.streakData);
           setAllBadges(json.badges.all);
           setEarnedBadges(json.badges.earned);
+
+          // Check if this is the current user's own profile
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.id === userId) {
+              setIsOwnProfile(true);
+              setCliType((json.user.cli_type as CliType) ?? "claude");
+            }
+          }
         } else {
           throw new Error("API failed");
         }
@@ -106,6 +133,27 @@ export default function UserDetailClient({ userId }: { userId: string }) {
     );
   }
 
+  async function handleCliTypeChange(newType: CliType) {
+    setCliSaving(true);
+    setCliSaved(false);
+    try {
+      const res = await fetch("/api/user/cli-type", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cli_type: newType }),
+      });
+      if (res.ok) {
+        setCliType(newType);
+        setCliSaved(true);
+        setTimeout(() => setCliSaved(false), 2000);
+      }
+    } catch {
+      // Silently fail — user can retry
+    } finally {
+      setCliSaving(false);
+    }
+  }
+
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-24">
@@ -142,6 +190,40 @@ export default function UserDetailClient({ userId }: { userId: string }) {
 
       {/* Badge grid */}
       <BadgeGrid allBadges={allBadges} earnedBadges={earnedBadges} />
+
+      {/* CLI settings — only visible on own profile */}
+      {isOwnProfile && (
+        <div className="glass flex flex-col gap-4 rounded-2xl p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-camp-text">CLI 설정</h2>
+            {cliSaved && (
+              <span className="text-xs font-medium text-green-400 animate-fade-rise">
+                저장됨
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-camp-text-secondary">
+            사용 중인 CLI를 선택하세요. 리더보드에 아이콘으로 표시됩니다.
+          </p>
+          <div className="flex gap-2">
+            {CLI_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                disabled={cliSaving}
+                onClick={() => handleCliTypeChange(opt.value)}
+                className={`cursor-pointer rounded-lg px-4 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  cliType === opt.value
+                    ? "bg-camp-accent text-black"
+                    : "bg-camp-surface text-camp-text-secondary hover:bg-camp-surface-hover hover:text-camp-text"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

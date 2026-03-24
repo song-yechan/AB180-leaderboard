@@ -340,6 +340,7 @@ process.stdin.on("end", () => {
     const data = JSON.stringify({
       session_id: submissionId,
       date: today,
+      cli_source: "claude",
       input_tokens: deltaInput,
       output_tokens: deltaOutput,
       cache_creation_tokens: deltaCacheCreate,
