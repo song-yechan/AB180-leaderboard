@@ -6,7 +6,7 @@ export default function HeroTitle() {
   return (
     <h1 className="text-3xl font-bold leading-[1.15] tracking-tight text-camp-text sm:text-4xl lg:text-5xl">
       <DecryptedText
-        text="더 많이 쓰는 사람이"
+        text="AI를 도구로 쓰는 사람과"
         speed={80}
         animateOn="view"
         sequential
@@ -15,7 +15,7 @@ export default function HeroTitle() {
       />
       <br />
       <DecryptedText
-        text="더 빠르게 성장합니다"
+        text="무기로 쓰는 사람의 차이"
         speed={80}
         animateOn="view"
         sequential
