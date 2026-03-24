@@ -6,6 +6,7 @@ import CountUp from "./CountUp";
 import CompareModal from "./CompareModal";
 // AnimatedList 제거 — IntersectionObserver N개 + motion remount가 필터 전환을 느리게 만듦
 import CohortBadge from "@/components/ui/CohortBadge";
+import CliBadge from "@/components/ui/CliBadge";
 import type { LeaderboardEntry } from "@/lib/types";
 import { getCategoryById, getCategoriesByGroup } from "@/lib/job-categories";
 import { calculateTotalTokens, calculateXP, getLevel } from "@/lib/level-system";
@@ -127,6 +128,7 @@ const LeaderboardRow = memo(function LeaderboardRow({
             <img src={levelInfo.icon} alt={levelInfo.name} width={20} height={20} className="size-5 shrink-0" title="레벨" />
             <span className="truncate text-sm font-semibold text-camp-text">{entry.name}</span>
             {showCohort && <CohortBadge cohort={entry.cohort ?? null} size="sm" />}
+            <CliBadge cliType={entry.cli_type} size="sm" />
             {entry.current_streak !== undefined && entry.current_streak > 0 && (
               <span className="shrink-0 text-[10px] text-camp-text-muted">
                 {"\uD83D\uDD25"}{" "}

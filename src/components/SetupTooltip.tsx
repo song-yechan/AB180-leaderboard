@@ -12,6 +12,8 @@ interface UserMe {
   api_token: string | null;
 }
 
+type CliTab = "claude" | "codex";
+
 export default function SetupTooltip({
   needsSetup = false,
   forceOpen,
@@ -20,6 +22,7 @@ export default function SetupTooltip({
   const [user, setUser] = useState<UserMe | null>(null);
   const [open, setOpenInternal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [cliTab, setCliTab] = useState<CliTab>("claude");
   const ref = useRef<HTMLDivElement>(null);
 
   const setOpen = (value: boolean | ((prev: boolean) => boolean)) => {
@@ -57,12 +60,42 @@ export default function SetupTooltip({
 
   if (!user?.api_token) return null;
 
-  const curlCommand = `curl -sL "${typeof window !== "undefined" ? window.location.origin : ""}/api/setup" | bash -s -- ${user.api_token}`;
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "";
+
+  const curlCommands: Record<CliTab, string> = {
+    claude: `curl -sL "${origin}/api/setup" | bash -s -- ${user.api_token}`,
+    codex: `curl -sL "${origin}/api/setup-codex" | bash -s -- ${user.api_token}`,
+  };
+
+  const curlCommand = curlCommands[cliTab];
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(curlCommand);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleTabChange = (tab: CliTab) => {
+    setCliTab(tab);
+    setCopied(false);
+  };
+
+  const tabLabel: Record<CliTab, string> = {
+    claude: "Claude Code",
+    codex: "Codex",
+  };
+
+  const descriptionPrefix: Record<CliTab, string> = {
+    claude: "Claude Code 사용량을 자동으로 리더보드에 반영하려면",
+    codex: "Codex 사용량을 자동으로 리더보드에 반영하려면",
+  };
+
+  const bottomText: Record<CliTab, string> = {
+    claude:
+      "한 번만 하면 됩니다. 이후 Claude Code를 쓸 때마다 자동 집계됩니다.",
+    codex:
+      "한 번만 하면 됩니다. 이후 Codex를 쓸 때마다 자동 집계됩니다.",
   };
 
   return (
@@ -117,8 +150,26 @@ export default function SetupTooltip({
               </svg>
             </button>
           </div>
+
+          {/* CLI tab pills */}
+          <div className="mb-3 flex gap-1.5">
+            {(["claude", "codex"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => handleTabChange(tab)}
+                className={`text-[11px] px-2 py-0.5 rounded-md cursor-pointer transition-colors ${
+                  cliTab === tab
+                    ? "bg-camp-accent text-black font-semibold"
+                    : "bg-camp-surface text-camp-text-secondary hover:text-camp-text"
+                }`}
+              >
+                {tabLabel[tab]}
+              </button>
+            ))}
+          </div>
+
           <p className="mb-3 text-xs leading-relaxed text-camp-text-secondary">
-            Claude Code 사용량을 자동으로 리더보드에 반영하려면
+            {descriptionPrefix[cliTab]}
             <br />
             아래 명령어를 터미널에 붙여넣기하세요.
           </p>
@@ -145,8 +196,7 @@ export default function SetupTooltip({
               <li>Enter 누르면 설정 완료!</li>
             </ol>
             <p className="mt-2 text-[11px] text-camp-text-muted">
-              한 번만 하면 됩니다. 이후 Claude Code를 쓸 때마다 자동
-              집계됩니다.
+              {bottomText[cliTab]}
             </p>
           </div>
         </div>

@@ -4,6 +4,7 @@ export interface UserData {
   avatar_url: string | null;
   role: string;
   cohort?: number | null;
+  cli_type?: string | null;
   total_cost: number;
   sessions_count: number;
   commits?: number;
@@ -34,6 +35,7 @@ export interface LeaderboardEntry {
   current_streak?: number;
   max_streak?: number;
   cohort?: number | null;
+  cli_type?: string | null;
   badges?: { badge_type: string; earned_at: string }[];
 }
 

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       dateFilter = now.toISOString().split("T")[0];
     }
 
-    let usersQuery = supabase.from("users").select("id, name, avatar_url, role, department, cohort");
+    let usersQuery = supabase.from("users").select("id, name, avatar_url, role, department, cohort, cli_type");
 
     if (category === "dev") {
       usersQuery = usersQuery.eq("role", "developer");
@@ -83,6 +83,7 @@ export async function GET(request: NextRequest) {
         role: user.role,
         department: user.department,
         cohort: user.cohort,
+        cli_type: user.cli_type,
         ...(aggregated.get(user.id) ?? {
           input_tokens: 0, output_tokens: 0, cache_creation_tokens: 0,
           cache_read_tokens: 0, total_cost: 0, sessions_count: 0,

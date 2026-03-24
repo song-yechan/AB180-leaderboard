@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
+type CliType = "claude" | "codex" | "both";
+
+function mergeCliType(
+  incoming: CliType,
+  current: CliType | null | undefined
+): CliType {
+  if (!current) return incoming;
+  if (current === "both") return "both";
+  if (incoming === current) return current;
+  // incoming and current are different non-'both' values → set to 'both'
+  return "both";
+}
+
 export async function POST(request: NextRequest) {
   // 1. Extract Bearer token
   const authHeader = request.headers.get("authorization");
@@ -13,13 +26,24 @@ export async function POST(request: NextRequest) {
   }
   const token = authHeader.slice(7);
 
+  // Parse optional cli_type from body; default to 'claude' if missing or unparseable
+  let incomingCliType: CliType = "claude";
+  try {
+    const body = await request.json();
+    if (body?.cli_type === "codex" || body?.cli_type === "both") {
+      incomingCliType = body.cli_type as CliType;
+    }
+  } catch {
+    // Empty body or non-JSON — use default 'claude'
+  }
+
   try {
     const supabase = await createServiceSupabase();
 
-    // 2. Look up user by api_token
+    // 2. Look up user by api_token (also fetch current cli_type for merge logic)
     const { data: user, error: userError } = await supabase
       .from("users")
-      .select("id")
+      .select("id, cli_type")
       .eq("api_token", token)
       .single();
 
@@ -71,10 +95,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 5. Mark setup as completed
+    // 5. Mark setup as completed and update cli_type with merge logic
+    const mergedCliType = mergeCliType(
+      incomingCliType,
+      user.cli_type as CliType | null | undefined
+    );
     await supabase
       .from("users")
-      .update({ setup_completed: true })
+      .update({ setup_completed: true, cli_type: mergedCliType })
       .eq("id", userId);
 
     return NextResponse.json({ ok: true });
