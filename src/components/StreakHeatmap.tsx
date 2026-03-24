@@ -65,7 +65,7 @@ export default function StreakHeatmap({ dailyUsage }: StreakHeatmapProps) {
         <span className="text-camp-text-muted">(최근 90일)</span>
       </h2>
 
-      <div className="flex gap-1.5 overflow-x-auto">
+      <div className="flex gap-1.5 overflow-visible">
         {/* Weekday labels */}
         <div className="flex flex-col gap-[3px] pr-1">
           {WEEKDAY_LABELS.map((label, i) => (
@@ -94,8 +94,8 @@ export default function StreakHeatmap({ dailyUsage }: StreakHeatmapProps) {
                   className={`group relative h-[14px] w-[14px] rounded-[3px] transition-colors ${getIntensity(day.sessions)}`}
                   title={getTooltipText(day.date, day.sessions)}
                 >
-                  {/* Hover tooltip */}
-                  <div className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-black/90 px-2 py-1 text-[10px] text-camp-text shadow-lg group-hover:block">
+                  {/* Hover tooltip — 아래쪽에 표시 (상단 잘림 방지) */}
+                  <div className="pointer-events-none absolute top-full left-1/2 z-10 mt-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-black/90 px-2 py-1 text-[10px] text-camp-text shadow-lg group-hover:block">
                     {getTooltipText(day.date, day.sessions)}
                   </div>
                 </div>
