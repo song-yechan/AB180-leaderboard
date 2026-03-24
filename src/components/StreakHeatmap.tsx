@@ -29,10 +29,10 @@ export default function StreakHeatmap({ dailyUsage }: StreakHeatmapProps) {
     usageMap.set(d.date, d.sessions);
   }
 
-  // Generate 90 days of data, filling in zeros where missing
+  // Generate 30 days of data, filling in zeros where missing
   const today = new Date();
   const days: { date: string; sessions: number }[] = [];
-  for (let i = 89; i >= 0; i--) {
+  for (let i = 29; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split("T")[0];
@@ -62,7 +62,7 @@ export default function StreakHeatmap({ dailyUsage }: StreakHeatmapProps) {
     <div className="glass flex flex-col gap-4 rounded-2xl p-6">
       <h2 className="text-sm font-semibold text-camp-text">
         스트릭 히트맵{" "}
-        <span className="text-camp-text-muted">(최근 90일)</span>
+        <span className="text-camp-text-muted">(최근 30일)</span>
       </h2>
 
       <div className="flex gap-1.5 overflow-visible">
