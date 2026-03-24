@@ -132,7 +132,7 @@ export default function UserDetailClient({ userId }: { userId: string }) {
       </Link>
 
       {/* Profile + stats */}
-      <UserProfile user={user} />
+      <UserProfile user={user} allBadges={allBadges} earnedBadges={earnedBadges} />
 
       {/* Usage chart */}
       <UsageChart dailyUsage={dailyUsage} />

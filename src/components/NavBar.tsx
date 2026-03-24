@@ -154,13 +154,12 @@ export default function NavBar() {
             <p className="text-xs text-amber-200">
               CLI 설정이 필요합니다. 터미널에서 setup 명령어를 실행해주세요.
             </p>
-            <button
-              type="button"
-              onClick={() => setSetupTooltipOpen(true)}
+            <Link
+              href="/onboarding"
               className="cursor-pointer rounded-md bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-200 transition-colors hover:bg-amber-500/30"
             >
-              설정 방법 보기
-            </button>
+              설정하러 가기
+            </Link>
           </div>
         </div>
       )}
@@ -172,13 +171,12 @@ export default function NavBar() {
             <p className="text-xs text-amber-200">
               CLI 설정이 필요합니다.
             </p>
-            <button
-              type="button"
-              onClick={() => setMobileSetupOpen(true)}
+            <Link
+              href="/onboarding"
               className="cursor-pointer rounded-md bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-200 transition-colors hover:bg-amber-500/30"
             >
-              설정 방법
-            </button>
+              설정하러 가기
+            </Link>
           </div>
         </div>
       )}

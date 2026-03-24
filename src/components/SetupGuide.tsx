@@ -172,6 +172,10 @@ export default function SetupGuide() {
 
   const codexInstructions = [
     {
+      step: "0.",
+      content: <>Codex CLI가 아직 없다면: <code className="rounded bg-camp-surface px-1.5 py-0.5 font-mono text-xs text-camp-accent">npm install -g @openai/codex</code></>,
+    },
+    {
       step: "1.",
       content: (
         <>
@@ -237,7 +241,7 @@ export default function SetupGuide() {
           title="Codex 사용량 추적 설정"
           description="터미널에 아래 한 줄만 붙여넣기하세요:"
           curlCommand={codexCommand}
-          prerequisite="Codex CLI가 설치되어 있어야 합니다. 설치: npm install -g @openai/codex"
+          prerequisite="사전 준비: Codex CLI 설치 (npm install -g @openai/codex). 아래 명령어가 Hooks 기능 활성화까지 자동으로 처리합니다."
           instructions={codexInstructions}
           note="한 번만 하면 됩니다. 이후 Codex를 쓸 때마다 사용량이 자동으로 리더보드에 반영됩니다."
         />

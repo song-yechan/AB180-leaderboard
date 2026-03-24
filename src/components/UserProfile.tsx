@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import CohortBadge from "@/components/ui/CohortBadge";
+import BadgeGrid from "@/components/BadgeGrid";
 import CountUp from "./CountUp";
 import { formatNumber } from "@/lib/format";
 import { calculateTotalTokens, calculateXP, getLevel } from "@/lib/level-system";
@@ -8,6 +10,8 @@ import type { UserData } from "@/lib/types";
 
 interface UserProfileProps {
   user: UserData;
+  allBadges?: { type: string; icon: string; label: string; description: string }[];
+  earnedBadges?: { badge_type: string; earned_at: string }[];
 }
 
 function RoleBadge({ role }: { role: string }) {
@@ -68,10 +72,24 @@ function TotalTokens({ user }: { user: UserProfileProps["user"] }) {
   );
 }
 
-function LevelCard({ user }: { user: UserProfileProps["user"] }) {
+function LevelCard({
+  user,
+  allBadges = [],
+  earnedBadges = [],
+}: {
+  user: UserProfileProps["user"];
+  allBadges?: UserProfileProps["allBadges"];
+  earnedBadges?: UserProfileProps["earnedBadges"];
+}) {
   const totalTokens = calculateTotalTokens(user);
   const xp = calculateXP(totalTokens, user.role);
   const level = getLevel(xp);
+  const [showBadges, setShowBadges] = useState(false);
+
+  const earnedCount = allBadges.filter((b) =>
+    earnedBadges.some((eb) => eb.badge_type === b.type)
+  ).length;
+  const totalCount = allBadges.length;
 
   return (
     <div className="glass rounded-xl p-4">
@@ -103,8 +121,39 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
           ) : (
             <span className="text-[10px] text-camp-accent">MAX LEVEL</span>
           )}
+          {totalCount > 0 && (
+            <button
+              onClick={() => setShowBadges(true)}
+              className="mt-2 flex items-center gap-1.5 cursor-pointer rounded-lg bg-camp-surface px-3 py-1.5 text-xs font-medium text-camp-text-secondary transition-colors hover:bg-camp-surface-hover hover:text-camp-text"
+            >
+              🏆 뱃지 {earnedCount}/{totalCount}
+            </button>
+          )}
         </div>
       </div>
+
+      {showBadges && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setShowBadges(false)}
+        >
+          <div
+            className="relative mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-camp-border bg-camp-bg p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-camp-text">🏆 뱃지 컬렉션</h2>
+              <button
+                onClick={() => setShowBadges(false)}
+                className="cursor-pointer text-camp-text-secondary hover:text-camp-text"
+              >
+                ✕
+              </button>
+            </div>
+            <BadgeGrid allBadges={allBadges} earnedBadges={earnedBadges} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -145,7 +194,7 @@ const STAT_CARDS = [
   },
 ] as const;
 
-export default function UserProfile({ user }: UserProfileProps) {
+export default function UserProfile({ user, allBadges, earnedBadges }: UserProfileProps) {
   return (
     <div className="flex flex-col gap-6">
       {/* Profile header */}
@@ -205,7 +254,7 @@ export default function UserProfile({ user }: UserProfileProps) {
       </div>
 
       {/* Level card */}
-      <LevelCard user={user} />
+      <LevelCard user={user} allBadges={allBadges} earnedBadges={earnedBadges} />
 
       {/* Token breakdown */}
       <TotalTokens user={user} />
