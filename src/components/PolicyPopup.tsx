@@ -71,7 +71,7 @@ export default function PolicyPopup({ onClose }: PolicyPopupProps) {
     >
       <div
         ref={contentRef}
-        className="relative mx-4 my-8 w-full max-w-2xl animate-fade-rise rounded-2xl border border-camp-border bg-camp-bg p-6 shadow-2xl sm:my-12"
+        className="relative mx-4 my-8 w-full max-w-3xl animate-fade-rise rounded-2xl border border-camp-border bg-camp-bg p-8 shadow-2xl sm:my-12"
       >
         {/* Close button */}
         <button
@@ -97,16 +97,16 @@ export default function PolicyPopup({ onClose }: PolicyPopupProps) {
 
         <div className="flex flex-col gap-6">
           {/* Title */}
-          <h2 className="text-lg font-bold text-camp-text">
+          <h2 className="text-xl font-bold text-camp-text">
             사용량 추적 정책
           </h2>
 
           {/* Section: 어떤 데이터를 수집하나요? */}
           <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold text-camp-text">
+            <h3 className="text-base font-semibold text-camp-text">
               어떤 데이터를 수집하나요?
             </h3>
-            <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-camp-text-secondary">
+            <ul className="list-inside list-disc space-y-1.5 text-sm leading-relaxed text-camp-text-secondary">
               <li>토큰 사용량 (Input, Output, Cache Read, Cache Create)</li>
               <li>세션 수, 커밋 수, PR 수</li>
               <li>사용 모델 정보</li>
@@ -115,10 +115,10 @@ export default function PolicyPopup({ onClose }: PolicyPopupProps) {
 
           {/* Section: 언제 수집되나요? */}
           <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold text-camp-text">
+            <h3 className="text-base font-semibold text-camp-text">
               언제 수집되나요?
             </h3>
-            <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-camp-text-secondary">
+            <ul className="list-inside list-disc space-y-1.5 text-sm leading-relaxed text-camp-text-secondary">
               <li>
                 <span className="font-medium text-camp-text">Claude Code</span>
                 : 세션 종료 시 (exit 또는 /exit) 자동 전송
@@ -134,10 +134,10 @@ export default function PolicyPopup({ onClose }: PolicyPopupProps) {
 
           {/* Section: exit 안 하고 터미널을 닫으면? */}
           <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold text-camp-text">
+            <h3 className="text-base font-semibold text-camp-text">
               exit 안 하고 터미널을 닫으면?
             </h3>
-            <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-camp-text-secondary">
+            <ul className="list-inside list-disc space-y-1.5 text-sm leading-relaxed text-camp-text-secondary">
               <li>다음 세션 시작 시 자동으로 복구됩니다</li>
               <li>로컬에 큐로 저장되어 데이터가 유실되지 않습니다</li>
             </ul>
@@ -145,10 +145,10 @@ export default function PolicyPopup({ onClose }: PolicyPopupProps) {
 
           {/* Section: 리더보드 기준 */}
           <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold text-camp-text">
+            <h3 className="text-base font-semibold text-camp-text">
               리더보드 기준
             </h3>
-            <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-camp-text-secondary">
+            <ul className="list-inside list-disc space-y-1.5 text-sm leading-relaxed text-camp-text-secondary">
               <li>
                 <span className="font-medium text-camp-text">정렬</span>: 총
                 토큰 수 기준 (Input + Output + Cache)
@@ -166,10 +166,10 @@ export default function PolicyPopup({ onClose }: PolicyPopupProps) {
 
           {/* Section: 레벨 & XP */}
           <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold text-camp-text">
+            <h3 className="text-base font-semibold text-camp-text">
               레벨 &amp; XP
             </h3>
-            <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-camp-text-secondary">
+            <ul className="list-inside list-disc space-y-1.5 text-sm leading-relaxed text-camp-text-secondary">
               <li>XP = 총 토큰 x 배율 (개발자 0.7x, 비개발자 1.0x)</li>
               <li>20단계 포켓몬 레벨 시스템</li>
             </ul>
@@ -177,9 +177,9 @@ export default function PolicyPopup({ onClose }: PolicyPopupProps) {
 
           {/* Section: 지원 CLI */}
           <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold text-camp-text">지원 CLI</h3>
+            <h3 className="text-base font-semibold text-camp-text">지원 CLI</h3>
             <div className="overflow-x-auto rounded-xl border border-camp-border">
-              <table className="w-full text-xs">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-camp-border bg-camp-surface">
                     <th className="px-3 py-2 text-left font-semibold text-camp-text">

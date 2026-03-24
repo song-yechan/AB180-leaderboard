@@ -133,46 +133,45 @@ function LevelCard({ user }: { user: UserProfileProps["user"] }) {
           onClick={() => setShowCollection(false)}
         >
           <div
-            className="relative mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-camp-border bg-camp-bg p-6 shadow-2xl"
+            className="relative mx-4 my-8 max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-camp-border bg-camp-bg p-8 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-5 flex items-center justify-between">
+            <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-camp-text">포켓몬 도감</h2>
-                <p className="text-xs text-camp-text-secondary">{collectedCount}종 발견 / {totalLevels}종</p>
+                <h2 className="text-xl font-bold text-camp-text">포켓몬 도감</h2>
+                <p className="mt-1 text-sm text-camp-text-secondary">{collectedCount}종 발견 / {totalLevels}종</p>
               </div>
               <button
                 onClick={() => setShowCollection(false)}
-                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-camp-text-secondary transition-colors hover:bg-camp-surface-hover hover:text-camp-text"
+                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-camp-text-secondary transition-colors hover:bg-camp-surface-hover hover:text-camp-text"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
             </div>
-            <div className="grid grid-cols-5 gap-3 sm:grid-cols-8">
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
               {LEVELS.map((lv) => {
                 const collected = lv.level <= level.level;
                 return (
                   <div
                     key={lv.level}
-                    className={`flex flex-col items-center gap-1 rounded-xl p-2 transition-all ${
+                    className={`flex flex-col items-center gap-1.5 rounded-xl p-3 transition-all ${
                       collected
-                        ? "bg-camp-surface"
-                        : "bg-camp-surface/30 opacity-30 grayscale"
+                        ? "bg-camp-surface ring-1 ring-camp-border"
+                        : "bg-camp-surface/20 opacity-25 grayscale"
                     }`}
-                    title={collected ? `Lv.${lv.level} ${lv.name}` : "???"}
                   >
                     <img
                       src={lv.icon}
                       alt={collected ? lv.name : "???"}
-                      width={48}
-                      height={48}
-                      className="size-12"
+                      width={64}
+                      height={64}
+                      className="size-16"
                       style={{ imageRendering: "pixelated" }}
                     />
-                    <span className={`text-center text-[9px] font-medium leading-tight ${collected ? "text-camp-text-secondary" : "text-camp-text-muted"}`}>
+                    <span className={`text-center text-xs font-semibold leading-tight ${collected ? "text-camp-text" : "text-camp-text-muted"}`}>
                       {collected ? lv.name : "???"}
                     </span>
-                    <span className={`text-[8px] font-mono ${collected ? "text-camp-accent" : "text-camp-text-muted"}`}>
+                    <span className={`text-[10px] font-mono ${collected ? "text-camp-accent" : "text-camp-text-muted"}`}>
                       Lv.{lv.level}
                     </span>
                   </div>
