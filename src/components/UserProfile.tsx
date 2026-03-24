@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import CohortBadge from "@/components/ui/CohortBadge";
+import CliBadge from "@/components/ui/CliBadge";
 import BadgeGrid from "@/components/BadgeGrid";
 import CountUp from "./CountUp";
 import { formatNumber } from "@/lib/format";
@@ -61,8 +62,8 @@ function TotalTokens({ user }: { user: UserProfileProps["user"] }) {
           산출 기준 안내
         </summary>
         <div className="mt-2 rounded-lg bg-camp-surface p-3 text-xs text-camp-text-muted space-y-2">
-          <p><strong className="text-camp-text-secondary">비용</strong>: 모델별 토큰 단가로 계산 (Opus $15/$75, Sonnet $3/$15, Haiku $0.80/$4 per 1M tokens)</p>
-          <p><strong className="text-camp-text-secondary">세션</strong>: Claude Code 종료 시마다 1회 카운트</p>
+          <p><strong className="text-camp-text-secondary">비용</strong>: 모델별 토큰 단가로 계산{user.cli_type === "codex" ? " (o3 $10/$40, o4-mini $1.1/$4.4 per 1M tokens)" : user.cli_type === "both" ? " (Claude: Opus $15/$75, Sonnet $3/$15 / Codex: o3 $10/$40, o4-mini $1.1/$4.4)" : " (Opus $15/$75, Sonnet $3/$15, Haiku $0.80/$4 per 1M tokens)"}</p>
+          <p><strong className="text-camp-text-secondary">세션</strong>: {user.cli_type === "codex" ? "Codex" : user.cli_type === "both" ? "Claude Code / Codex" : "Claude Code"} 종료 시마다 1회 카운트</p>
           <p><strong className="text-camp-text-secondary">커밋</strong>: 당일 git log 기준 실제 커밋 수</p>
           <p><strong className="text-camp-text-secondary">XP</strong>: 총 토큰 × 배율 (개발자 0.7x, 비개발자 1.0x)</p>
           <p><strong className="text-camp-text-secondary">스트릭</strong>: 연속 사용 일수 (1일이라도 빠지면 리셋)</p>
@@ -207,6 +208,7 @@ export default function UserProfile({ user, allBadges, earnedBadges }: UserProfi
               </h1>
               {user.cohort && <CohortBadge cohort={user.cohort} />}
               <RoleBadge role={user.role} />
+              <CliBadge cliType={user.cli_type} />
             </div>
 
             <div className="flex items-center gap-3 text-sm text-camp-text-secondary">
