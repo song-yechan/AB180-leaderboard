@@ -36,9 +36,34 @@ export async function POST(request: NextRequest) {
   const cliSource = typeof body.cli_source === "string" ? body.cli_source : "claude";
   const isNewSession = body.is_new_session === true;
 
-  if (!date) {
+  // Bounds validation
+  if (!Number.isFinite(inputTokens) || inputTokens < 0 || inputTokens > 500_000_000) {
+    return NextResponse.json({ error: "Invalid input_tokens" }, { status: 400 });
+  }
+  if (!Number.isFinite(outputTokens) || outputTokens < 0 || outputTokens > 500_000_000) {
+    return NextResponse.json({ error: "Invalid output_tokens" }, { status: 400 });
+  }
+  if (!Number.isFinite(cacheCreationTokens) || cacheCreationTokens < 0 || cacheCreationTokens > 500_000_000) {
+    return NextResponse.json({ error: "Invalid cache_creation_tokens" }, { status: 400 });
+  }
+  if (!Number.isFinite(cacheReadTokens) || cacheReadTokens < 0 || cacheReadTokens > 500_000_000) {
+    return NextResponse.json({ error: "Invalid cache_read_tokens" }, { status: 400 });
+  }
+  if (!Number.isFinite(totalCost) || totalCost < 0 || totalCost > 10_000) {
+    return NextResponse.json({ error: "Invalid total_cost" }, { status: 400 });
+  }
+  if (!Number.isFinite(commits) || commits < 0 || commits > 100) {
+    return NextResponse.json({ error: "Invalid commits" }, { status: 400 });
+  }
+  if (!Number.isFinite(pullRequests) || pullRequests < 0 || pullRequests > 100) {
+    return NextResponse.json({ error: "Invalid pull_requests" }, { status: 400 });
+  }
+
+  // Date format validation
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!date || !dateRegex.test(date)) {
     return NextResponse.json(
-      { error: "Missing required field: date" },
+      { error: "Invalid date" },
       { status: 400 }
     );
   }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServiceSupabase } from "@/lib/supabase/server";
-import { verifySession } from "@/lib/session";
+import { verifySession, isLegacyCookie, signSession } from "@/lib/session";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -28,7 +28,7 @@ export async function GET() {
 
     const { data: user, error } = await supabase
       .from("users")
-      .select("id, name, email, avatar_url, role, department, cohort, api_token, setup_completed, cli_type")
+      .select("id, name, email, avatar_url, role, department, cohort, setup_completed, cli_type")
       .eq("id", sessionId)
       .single();
 
@@ -37,6 +37,19 @@ export async function GET() {
         { error: "User not found" },
         { status: 401 },
       );
+    }
+
+    // Auto-upgrade legacy cookies
+    if (isLegacyCookie(sessionCookie)) {
+      const response = NextResponse.json(user);
+      response.cookies.set("ai-camp-session", signSession(user.id), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+      return response;
     }
 
     return NextResponse.json(user);

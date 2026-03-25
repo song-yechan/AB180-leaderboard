@@ -1,7 +1,12 @@
 import crypto from "crypto";
 
-const SECRET =
-  process.env.SESSION_SECRET || "dev-secret-change-in-production";
+function getSecret(): string {
+  const s = process.env.SESSION_SECRET;
+  if (!s) throw new Error("SESSION_SECRET environment variable is required");
+  return s;
+}
+
+const SECRET: string = getSecret();
 
 export function signSession(userId: string): string {
   const sig = crypto
@@ -33,10 +38,16 @@ export function verifySession(cookie: string): string | null {
   }
 
   // 미서명 레거시 쿠키 (UUID 형식): 마이그레이션 기간 허용
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (uuidRegex.test(cookie)) {
+  if (isLegacyCookie(cookie)) {
     return cookie;
   }
 
   return null;
+}
+
+// Keep accepting legacy cookies for now, but flag them
+export function isLegacyCookie(cookie: string): boolean {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(cookie);
 }

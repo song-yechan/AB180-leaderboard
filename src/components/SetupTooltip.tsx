@@ -40,7 +40,7 @@ export default function SetupTooltip({
   }, [forceOpen]);
 
   useEffect(() => {
-    fetch("/api/me")
+    fetch("/api/me/token")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => setUser(data))
       .catch(() => setUser(null));

@@ -4,8 +4,8 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 개발 모드: 인증 스킵
-  if (process.env.NODE_ENV === "development") {
+  // 명시적 인증 바이패스 (BYPASS_AUTH=true일 때만)
+  if (process.env.BYPASS_AUTH === "true") {
     return NextResponse.next();
   }
 
@@ -26,6 +26,20 @@ export function proxy(request: NextRequest) {
   const session = request.cookies.get("ai-camp-session");
 
   if (!session?.value) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL("/auth", request.url));
+  }
+
+  // Basic format validation (full verification in API routes)
+  const val = session.value;
+  const hasDot = val.includes(".");
+  const isUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      val,
+    );
+  if (!hasDot && !isUuid) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

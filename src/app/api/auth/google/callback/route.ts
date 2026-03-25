@@ -48,7 +48,9 @@ export async function GET(request: NextRequest) {
   const stateParam = request.nextUrl.searchParams.get("state");
   const stateCookie = request.cookies.get("oauth-state")?.value;
 
-  if (!stateParam || !stateCookie || stateParam !== stateCookie) {
+  if (!stateParam || !stateCookie ||
+      stateParam.length !== stateCookie.length ||
+      !crypto.timingSafeEqual(Buffer.from(stateParam), Buffer.from(stateCookie))) {
     return NextResponse.redirect(`${appUrl}/auth?error=state_mismatch`);
   }
 
@@ -69,7 +71,7 @@ export async function GET(request: NextRequest) {
 
   if (tokenData.error || !tokenData.access_token) {
     return NextResponse.redirect(
-      `${appUrl}/auth?error=token_exchange_failed`,
+      `${appUrl}/auth?error=auth_failed`,
     );
   }
 
@@ -84,7 +86,7 @@ export async function GET(request: NextRequest) {
   const userInfo: GoogleUserInfo = await userInfoResponse.json();
 
   if (!userInfo.email) {
-    return NextResponse.redirect(`${appUrl}/auth?error=userinfo_failed`);
+    return NextResponse.redirect(`${appUrl}/auth?error=auth_failed`);
   }
 
   // Verify email domain
@@ -126,7 +128,7 @@ export async function GET(request: NextRequest) {
     .single();
 
   if (dbError || !user) {
-    return NextResponse.redirect(`${appUrl}/auth?error=db_error`);
+    return NextResponse.redirect(`${appUrl}/auth?error=auth_failed`);
   }
 
   // Existing users missing api_token get one generated

@@ -40,8 +40,11 @@ export async function POST(request: NextRequest) {
     updated_at: new Date().toISOString(),
   };
 
-  if (name && name.trim()) {
-    updateData.name = name.trim();
+  if (name && typeof name === "string") {
+    const sanitized = name.trim().slice(0, 100);
+    if (sanitized.length > 0) {
+      updateData.name = sanitized;
+    }
   }
 
   const { error } = await supabase

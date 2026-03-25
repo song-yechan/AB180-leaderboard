@@ -23,6 +23,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!block || typeof block !== "string" || block.length > 50) {
+    return NextResponse.json(
+      { error: "Invalid block" },
+      { status: 400 }
+    );
+  }
+
   if (typeof day !== "number" || day < 1 || day > 4) {
     return NextResponse.json(
       { error: "day must be between 1 and 4" },

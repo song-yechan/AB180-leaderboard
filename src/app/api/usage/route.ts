@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
       headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=30" },
     });
   } catch (err) {
-    console.error("Failed to fetch leaderboard from Supabase:", err);
-    return NextResponse.json({ leaderboard: [] });
+    console.error("Failed to fetch leaderboard:", err);
+    return NextResponse.json({ leaderboard: [] }, { status: 500 });
   }
 }

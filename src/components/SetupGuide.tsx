@@ -10,7 +10,6 @@ interface UserMe {
   role: string;
   department: string | null;
   cohort: string | null;
-  api_token: string | null;
 }
 
 type CliType = "claude" | "codex" | "both";
@@ -91,6 +90,7 @@ interface SetupGuideProps {
 
 export default function SetupGuide({ onCliTypeChange }: SetupGuideProps = {}) {
   const [user, setUser] = useState<UserMe | null>(null);
+  const [apiToken, setApiToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [cliType, setCliTypeInternal] = useState<CliType>("claude");
 
@@ -100,25 +100,30 @@ export default function SetupGuide({ onCliTypeChange }: SetupGuideProps = {}) {
   }
 
   useEffect(() => {
-    fetch("/api/me")
-      .then((res) => {
-        if (!res.ok) return null;
-        return res.json();
+    Promise.all([
+      fetch("/api/me").then((res) => (res.ok ? res.json() : null)),
+      fetch("/api/me/token").then((res) => (res.ok ? res.json() : null)),
+    ])
+      .then(([userData, tokenData]) => {
+        setUser(userData);
+        setApiToken(tokenData?.api_token ?? null);
       })
-      .then((data) => setUser(data))
-      .catch(() => setUser(null))
+      .catch(() => {
+        setUser(null);
+        setApiToken(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   const origin =
     typeof window !== "undefined" ? window.location.origin : "";
 
-  const claudeCommand = user?.api_token
-    ? `curl -sL "${origin}/api/setup" | bash -s -- ${user.api_token}`
+  const claudeCommand = apiToken
+    ? `curl -sL "${origin}/api/setup" | bash -s -- ${apiToken}`
     : "";
 
-  const codexCommand = user?.api_token
-    ? `curl -sL "${origin}/api/setup-codex" | bash -s -- ${user.api_token}`
+  const codexCommand = apiToken
+    ? `curl -sL "${origin}/api/setup-codex" | bash -s -- ${apiToken}`
     : "";
 
   if (loading) {
@@ -134,7 +139,7 @@ export default function SetupGuide({ onCliTypeChange }: SetupGuideProps = {}) {
     );
   }
 
-  if (!user || !user.api_token) {
+  if (!user || !apiToken) {
     return (
       <div className="rounded-xl border border-amber-500/20 bg-camp-surface p-6">
         <p className="text-sm text-camp-text-secondary">
