@@ -1,6 +1,12 @@
+import crypto from "crypto";
+
 export async function GET() {
+  const hash = crypto.createHash("sha256").update(HOOK_SCRIPT).digest("hex");
   return new Response(HOOK_SCRIPT, {
-    headers: { "Content-Type": "application/javascript; charset=utf-8" },
+    headers: {
+      "Content-Type": "application/javascript; charset=utf-8",
+      "X-Script-Hash": hash,
+    },
   });
 }
 
@@ -121,7 +127,8 @@ function drainQueue(apiUrl, token, maxItems) {
 function httpPost(apiUrl, token, data, timeoutMs, callback) {
   try {
     const url = new URL(apiUrl + "/api/usage/submit");
-    const mod = url.protocol === "https:" ? https : http;
+    if (url.protocol !== "https:") { callback(false); return; }
+    const mod = https;
     const req = mod.request(url, {
       method: "POST",
       headers: {
@@ -155,6 +162,10 @@ function selfUpdate(apiUrl) {
       res.on("data", (d) => (body += d));
       res.on("end", () => {
         try {
+          const crypto = require("crypto");
+          const serverHash = res.headers["x-script-hash"];
+          const bodyHash = crypto.createHash("sha256").update(body).digest("hex");
+          if (serverHash && serverHash !== bodyHash) return;
           if (res.statusCode === 200 && body.length > 100) {
             const selfPath = path.join(configDir, "report-usage.js");
             const current = fs.existsSync(selfPath) ? fs.readFileSync(selfPath, "utf8") : "";
@@ -291,21 +302,23 @@ process.stdin.on("end", () => {
     }
 
     // 커밋/PR: 본인 커밋만 카운트 (git config user.email 기준)
-    const { execSync } = require("child_process");
+    const { execFileSync } = require("child_process");
     try {
       const cwd = event.cwd || process.cwd();
       const todayForGit = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
-      const gitEmail = execSync("git config user.email 2>/dev/null", { cwd, timeout: 2000 }).toString().trim();
-      const authorFilter = gitEmail ? " --author='" + gitEmail + "'" : "";
-      const gitCommits = execSync("git log --oneline --since='" + todayForGit + "'" + authorFilter + " 2>/dev/null | wc -l", { cwd, timeout: 3000 }).toString().trim();
-      commits = parseInt(gitCommits, 10) || 0;
+      let gitEmail = "";
+      try { gitEmail = execFileSync("git", ["config", "user.email"], { cwd, timeout: 2000, stdio: ["pipe", "pipe", "pipe"] }).toString().trim(); } catch { gitEmail = ""; }
+      const gitArgs = ["log", "--oneline", "--since=" + todayForGit];
+      if (gitEmail) gitArgs.push("--author=" + gitEmail);
+      try { commits = parseInt(execFileSync("git", gitArgs, { cwd, timeout: 3000, stdio: ["pipe", "pipe", "pipe"] }).toString().split("\\n").filter(Boolean).length.toString(), 10) || 0; } catch { commits = 0; }
     } catch { commits = 0; }
     try {
       const cwd = event.cwd || process.cwd();
-      const gitEmail = execSync("git config user.email 2>/dev/null", { cwd, timeout: 2000 }).toString().trim();
-      const authorFilter = gitEmail ? " --author='" + gitEmail + "'" : "";
-      const gitPRs = execSync("git log --oneline --all --grep='Merge pull request' --since='1 week ago'" + authorFilter + " 2>/dev/null | wc -l", { cwd, timeout: 3000 }).toString().trim();
-      pullRequests = parseInt(gitPRs, 10) || 0;
+      let gitEmail = "";
+      try { gitEmail = execFileSync("git", ["config", "user.email"], { cwd, timeout: 2000, stdio: ["pipe", "pipe", "pipe"] }).toString().trim(); } catch { gitEmail = ""; }
+      const prArgs = ["log", "--oneline", "--all", "--grep=Merge pull request", "--since=1 week ago"];
+      if (gitEmail) prArgs.push("--author=" + gitEmail);
+      try { pullRequests = parseInt(execFileSync("git", prArgs, { cwd, timeout: 3000, stdio: ["pipe", "pipe", "pipe"] }).toString().split("\\n").filter(Boolean).length.toString(), 10) || 0; } catch { pullRequests = 0; }
     } catch { pullRequests = 0; }
 
     const totalTokens = totalInput + totalOutput + totalCacheCreate + totalCacheRead;
