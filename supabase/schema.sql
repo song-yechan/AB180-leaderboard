@@ -9,7 +9,7 @@ create table users (
   avatar_url text,
   role text check (role in ('developer', 'non-developer')) default 'non-developer',
   department text,
-  cohort integer default 2,
+  cohort integer default null,
   max_streak integer default 0,
   api_token text unique, -- Stop Hook 인증용 토큰 (aicamp_ + 64-char hex)
   cli_type text check (cli_type in ('claude', 'codex', 'both')) default 'claude',

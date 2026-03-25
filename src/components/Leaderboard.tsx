@@ -164,7 +164,7 @@ export default function Leaderboard() {
   const router = useRouter();
   const [category, setCategory] = useState<Category>("all");
   const [department, setDepartment] = useState<string>("\uC804\uCCB4");
-  const [period, setPeriod] = useState<Period>("all");
+  const [period, setPeriod] = useState<Period>("today");
   const [rawData, setRawData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [compareIds, setCompareIds] = useState<string[]>([]);
@@ -180,8 +180,8 @@ export default function Leaderboard() {
   // Map category to API-compatible values; camp tab is filtered client-side
   const apiCategory = category === "camp" ? "all" : category;
 
-  // Show cohort badge only on "camp" tab
-  const showCohort = category === "camp";
+  // Show cohort badge on all tabs (기수가 있는 유저는 항상 표시)
+  const showCohort = true;
 
   // Show department sub-filter for dev/non-dev tabs
   const showDeptFilter = category === "dev" || category === "non-dev";

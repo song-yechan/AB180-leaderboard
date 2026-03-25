@@ -13,13 +13,14 @@ export async function GET(request: NextRequest) {
 
     let dateFilter: string | null = null;
     const now = new Date();
+    const koreaToday = now.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
 
     if (period === "week") {
       const weekAgo = new Date(now);
       weekAgo.setDate(weekAgo.getDate() - 7);
-      dateFilter = weekAgo.toISOString().split("T")[0];
+      dateFilter = weekAgo.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
     } else if (period === "today") {
-      dateFilter = now.toISOString().split("T")[0];
+      dateFilter = koreaToday;
     }
 
     let usersQuery = supabase.from("users").select("id, name, avatar_url, role, department, cohort, cli_type");
