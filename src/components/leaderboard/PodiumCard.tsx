@@ -25,7 +25,7 @@ function getRankMeta(rank: number) {
       badgeText: "text-black",
       medal: "\uD83E\uDD47",
       ringColor: "ring-camp-gold/30",
-      scale: "lg:scale-105",
+      scale: "sm:scale-[1.08]",
       order: "order-2 lg:order-2",
       spotlightColor: "rgba(245, 158, 11, 0.15)",
       electricColor: "#F59E0B",
@@ -39,7 +39,7 @@ function getRankMeta(rank: number) {
       badgeText: "text-black",
       medal: "\uD83E\uDD48",
       ringColor: "ring-camp-silver/20",
-      scale: "",
+      scale: "sm:scale-[0.95]",
       order: "order-1 lg:order-1",
       spotlightColor: "rgba(148, 163, 184, 0.15)",
       electricColor: "#94A3B8",
@@ -53,7 +53,7 @@ function getRankMeta(rank: number) {
       badgeText: "text-black",
       medal: "\uD83E\uDD49",
       ringColor: "ring-camp-bronze/20",
-      scale: "",
+      scale: "sm:scale-[0.92]",
       order: "order-3 lg:order-3",
       spotlightColor: "rgba(205, 127, 50, 0.15)",
       electricColor: "#D97706",
@@ -94,7 +94,7 @@ export default function PodiumCard({
 
   return (
     <div
-      className={`animate-fade-rise ${meta.order}`}
+      className={`animate-fade-rise ${meta.order} ${meta.scale}`}
       style={{
         animationDelay: `${animationDelay}ms`,
         perspective: "1000px",
