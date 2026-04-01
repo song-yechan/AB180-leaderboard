@@ -2,10 +2,12 @@ import crypto from "crypto";
 
 export async function GET() {
   const hash = crypto.createHash("sha256").update(HOOK_SCRIPT).digest("hex");
+  const canonicalUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   return new Response(HOOK_SCRIPT, {
     headers: {
       "Content-Type": "application/javascript; charset=utf-8",
       "X-Script-Hash": hash,
+      ...(canonicalUrl ? { "X-Canonical-Url": canonicalUrl } : {}),
     },
   });
 }
@@ -172,6 +174,12 @@ function selfUpdate(apiUrl) {
             if (body.trim() !== current.trim()) {
               fs.writeFileSync(selfPath, body);
             }
+          }
+          // URL migration: server가 canonical URL을 내려주면 api_url 자동 갱신
+          const canonicalUrl = res.headers["x-canonical-url"];
+          if (canonicalUrl && canonicalUrl !== apiUrl) {
+            const urlPath = path.join(configDir, "api_url");
+            fs.writeFileSync(urlPath, canonicalUrl);
           }
           const settingsPath = path.join(os.homedir(), ".claude", "settings.json");
           if (fs.existsSync(settingsPath)) {
