@@ -111,10 +111,24 @@ if (ssIdx >= 0) {
   s.hooks.SessionStart.push(ssEntry);
 }
 
+// PostToolUse hook (30분 간격 중간 전송)
+if (!s.hooks.PostToolUse) s.hooks.PostToolUse = [];
+var ptuIdx = s.hooks.PostToolUse.findIndex(function(h) {
+  return h.hooks && h.hooks.some(function(hh) {
+    return hh.command && hh.command.includes('ai-camp/report-usage-codex');
+  });
+});
+var ptuEntry = { matcher: null, hooks: [{ type: 'command', command: cmd, timeout: 5 }] };
+if (ptuIdx >= 0) {
+  s.hooks.PostToolUse[ptuIdx] = ptuEntry;
+} else {
+  s.hooks.PostToolUse.push(ptuEntry);
+}
+
 fs.writeFileSync(f, JSON.stringify(s, null, 2) + '\\n');
 "
 
-echo "  [5/6] Codex hooks registered (Stop + SessionStart)"
+echo "  [5/6] Codex hooks registered (Stop + SessionStart + PostToolUse)"
 
 # --------------------------------------------------
 # 6. Call onboard API

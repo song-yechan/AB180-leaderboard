@@ -227,8 +227,20 @@ process.stdin.on("end", () => {
     const token = fs.readFileSync(tokenPath, "utf8").trim();
     const apiUrl = fs.readFileSync(urlPath, "utf8").trim();
 
-    // Codex only fires Stop hook — no SessionStart/PostToolUse distinction
     const hookEvent = event.hook_event_name || "";
+
+    // SessionStart: 큐 drain + self-update만 수행하고 종료
+    if (hookEvent === "SessionStart") {
+      selfUpdate(apiUrl);
+      drainQueue(apiUrl, token, 20);
+      setTimeout(() => process.exit(0), 4000);
+      return;
+    }
+
+    // PostToolUse: 30분 스로틀 — 미경과 시 즉시 종료
+    if (hookEvent === "PostToolUse") {
+      if (shouldThrottle()) process.exit(0);
+    }
 
     const transcriptPath = event.transcript_path;
     const sessionId = event.session_id;
