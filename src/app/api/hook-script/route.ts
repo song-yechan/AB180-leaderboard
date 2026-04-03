@@ -22,6 +22,52 @@ const http = require("http");
 const HARD_TIMEOUT = setTimeout(() => process.exit(0), 5000);
 HARD_TIMEOUT.unref();
 
+const FALLBACK_URLS = [
+  "https://ab-180-ai-leaderboard.vercel.app",
+  "https://ai-camp-web.vercel.app"
+];
+
+function checkAndFixApiUrl(apiUrl, callback) {
+  function tryUrl(url, cb) {
+    try {
+      const u = new URL(url + "/api/usage/submit");
+      const mod = u.protocol === "https:" ? https : http;
+      const req = mod.request(u, { method: "HEAD", timeout: 2000 }, (res) => {
+        res.on("data", () => {});
+        res.on("end", () => cb(res.statusCode >= 200 && res.statusCode < 500));
+      });
+      req.on("timeout", () => { req.destroy(); cb(false); });
+      req.on("error", () => cb(false));
+      req.end();
+    } catch { cb(false); }
+  }
+
+  tryUrl(apiUrl, (ok) => {
+    if (ok) { callback(apiUrl); return; }
+    // Current URL is dead — try fallbacks
+    const remaining = FALLBACK_URLS.filter((u) => u !== apiUrl);
+    let i = 0;
+    function next() {
+      if (i >= remaining.length) { callback(apiUrl); return; } // all failed, use original
+      const candidate = remaining[i++];
+      tryUrl(candidate, (ok2) => {
+        if (ok2) {
+          // Update api_url file
+          try {
+            const configDir = path.join(os.homedir(), ".config", "ai-camp");
+            if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
+            fs.writeFileSync(path.join(configDir, "api_url"), candidate);
+          } catch {}
+          callback(candidate);
+        } else {
+          next();
+        }
+      });
+    }
+    next();
+  });
+}
+
 const PRICING = {
   "claude-opus-4-6":     { input: 15, output: 75, cache_write: 18.75, cache_read: 1.50 },
   "claude-sonnet-4-6":   { input: 3, output: 15, cache_write: 3.75, cache_read: 0.30 },
@@ -126,7 +172,7 @@ function drainQueue(apiUrl, token, maxItems) {
   } catch {}
 }
 
-function httpPost(apiUrl, token, data, timeoutMs, callback) {
+function httpPostSingle(apiUrl, token, data, timeoutMs, callback) {
   try {
     const url = new URL(apiUrl + "/api/usage/submit");
     if (url.protocol !== "https:") { callback(false); return; }
@@ -147,6 +193,32 @@ function httpPost(apiUrl, token, data, timeoutMs, callback) {
     req.write(data);
     req.end();
   } catch { callback(false); }
+}
+
+function httpPost(apiUrl, token, data, timeoutMs, callback) {
+  httpPostSingle(apiUrl, token, data, timeoutMs, (ok) => {
+    if (ok) { callback(true); return; }
+    // Primary failed — try fallback URLs
+    const remaining = FALLBACK_URLS.filter((u) => u !== apiUrl);
+    let i = 0;
+    function next() {
+      if (i >= remaining.length) { callback(false); return; }
+      const candidate = remaining[i++];
+      httpPostSingle(candidate, token, data, timeoutMs, (ok2) => {
+        if (ok2) {
+          // Update api_url for future calls
+          try {
+            const configDir = path.join(os.homedir(), ".config", "ai-camp");
+            fs.writeFileSync(path.join(configDir, "api_url"), candidate);
+          } catch {}
+          callback(true);
+        } else {
+          next();
+        }
+      });
+    }
+    next();
+  });
 }
 
 function selfUpdate(apiUrl) {
@@ -249,20 +321,24 @@ process.stdin.on("end", () => {
     if (!fs.existsSync(tokenPath) || !fs.existsSync(urlPath)) process.exit(0);
 
     const token = fs.readFileSync(tokenPath, "utf8").trim();
-    const apiUrl = fs.readFileSync(urlPath, "utf8").trim();
+    const savedApiUrl = fs.readFileSync(urlPath, "utf8").trim();
+
+    const hookEvent = event.hook_event_name || "";
+
+    // PostToolUse: 30분 스로틀 — 미경과 시 즉시 종료
+    if (hookEvent === "PostToolUse") {
+      if (shouldThrottle()) process.exit(0);
+    }
+
+    // URL 복구 후 나머지 로직 실행
+    checkAndFixApiUrl(savedApiUrl, (apiUrl) => {
 
     // SessionStart: 큐 drain + self-update만 수행하고 종료
-    const hookEvent = event.hook_event_name || "";
     if (hookEvent === "SessionStart") {
       selfUpdate(apiUrl);
       drainQueue(apiUrl, token, 20);
       setTimeout(() => process.exit(0), 4000);
       return;
-    }
-
-    // PostToolUse: 30분 스로틀 — 미경과 시 즉시 종료
-    if (hookEvent === "PostToolUse") {
-      if (shouldThrottle()) process.exit(0);
     }
 
     // 이하 Stop / PostToolUse(스로틀 통과) 공통 로직
@@ -396,6 +472,8 @@ process.stdin.on("end", () => {
       }
       process.exit(0);
     });
+
+    }); // checkAndFixApiUrl callback
   } catch { process.exit(0); }
 });
 `;
